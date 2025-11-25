@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ biome['name'] }} Hunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #134e4a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body class="text-white pb-32">
+    <div class="glass sticky top-0 z-50 p-4">
+        <div class="flex items-center justify-between mb-2">
+            <div class="text-lg font-bold">{{ biome['name'] }}</div>
+            <div class="bg-emerald-600 px-3 py-1 rounded-full text-sm font-mono">{{ game.code }}</div>
+        </div>
+        <div id="leaderboard" class="flex gap-4 overflow-x-auto pb-2">
+            {% for p in players %}
+            <div class="flex items-center gap-2 shrink-0">
+                <span>{{ loop.index }}</span>
+                <span>{{ p.name }}</span>
+                <span class="font-bold text-emerald-300">{{ p.score }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="p-4">
+        <h2 class="text-xl font-bold mb-4">🎯 Find These Items</h2>
+        <div class="grid grid-cols-2 gap-3">
+            {% for item, points in biome['items'].items() %}
+            <div class="glass rounded-xl p-4">
+                <div class="flex justify-between items-start">
+                    <span>{{ item }}</span>
+                    <span class="bg-emerald-600/50 px-2 py-0.5 rounded text-sm">+{{ points }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="mt-8 text-center">
+            <div class="text-emerald-300 mb-2">🌲 Phase 1 MVP - More features coming soon!</div>
+            <div class="text-sm text-emerald-400">Camera, GPS, iNaturalist ID in next update</div>
+        </div>
+    </div>
+    
+    <script>
+        async function refreshLeaderboard() {
+            const response = await fetch('/api/leaderboard/{{ game.code }}');
+            const players = await response.json();
+            
+            const lb = document.getElementById('leaderboard');
+            lb.innerHTML = players.map((p, i) => `
+                <div class="flex items-center gap-2 shrink-0">
+                    <span>${i + 1}</span>
+                    <span>${p.name}</span>
+                    <span class="font-bold text-emerald-300">${p.score}</span>
+                </div>
+            `).join('');
+        }
+        
+        setInterval(refreshLeaderboard, 10000);
+    </script>
+</body>
+</html>

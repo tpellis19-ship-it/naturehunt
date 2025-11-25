@@ -1,0 +1,10 @@
+CREATE TABLE users (id BIGSERIAL PRIMARY KEY, email VARCHAR(255), username VARCHAR(100), level INT DEFAULT 1, xp INT DEFAULT 0, created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE games (id BIGSERIAL PRIMARY KEY, code VARCHAR(4) UNIQUE, biome VARCHAR(50), active BOOLEAN DEFAULT true, created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE players (id BIGSERIAL PRIMARY KEY, game_code VARCHAR(4), name VARCHAR(100), score INT DEFAULT 0, is_host BOOLEAN DEFAULT false, created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE finds (id BIGSERIAL PRIMARY KEY, user_id BIGINT, game_code VARCHAR(4), category VARCHAR(50), item_name VARCHAR(200), points INT DEFAULT 0, latitude DECIMAL(10,8), longitude DECIMAL(11,8), created_at TIMESTAMPTZ DEFAULT NOW());
+CREATE TABLE achievements (id BIGSERIAL PRIMARY KEY, code VARCHAR(100) UNIQUE, name VARCHAR(200), xp_reward INT DEFAULT 0);
+INSERT INTO achievements (code,name,xp_reward) VALUES ('first_find','First Find',100),('first_rock','Rock Collector',100),('ten_finds','Explorer',250);
+ALTER TABLE games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE players ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public" ON games FOR ALL USING (true);
+CREATE POLICY "Public" ON players FOR ALL USING (true);

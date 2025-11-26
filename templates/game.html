@@ -3,23 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hunt</title>
+    <title>{{ biome['name'] }} Hunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: linear-gradient(135deg, #134e4a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
         .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .found { opacity: 0.5; pointer-events: none; }
+        .item-card { transition: all 0.3s; }
+        .item-card:active { transform: scale(0.95); }
+        .toast { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .common { border-left: 4px solid #9CA3AF; }
+        .uncommon { border-left: 4px solid #10B981; }
+        .rare { border-left: 4px solid #3B82F6; }
+        .legendary { border-left: 4px solid #F59E0B; }
     </style>
 </head>
 <body class="text-white pb-32">
-    <div class="glass sticky top-0 z-50 p-4">
-        <div class="flex items-center justify-between mb-2">
-            <div class="text-lg font-bold">{{ biome['name'] }}</div>
-            <div class="bg-emerald-600 px-3 py-1 rounded-full text-sm font-mono">{{ game.code }}</div>
+    <div id="toast" class="fixed top-4 left-4 right-4 z-50 hidden">
+        <div class="glass rounded-xl p-4 text-center text-xl font-bold"></div>
+    </div>
+    
+    <div class="glass sticky top-0 z-40 p-4">
+        <div class="flex items-center justify-between mb-3">
+            <div class="text-xl font-bold">{{ biome['name'] }}</div>
+            <div class="bg-emerald-600 px-4 py-2 rounded-full text-lg font-mono font-bold">{{ game.code }}</div>
         </div>
-        <div id="leaderboard" class="flex gap-4 overflow-x-auto pb-2">
+        <div class="text-sm text-emerald-300 mb-2">Share code with friends to join!</div>
+        <div id="leaderboard" class="flex gap-3 overflow-x-auto pb-2">
             {% for p in players %}
-            <div class="flex items-center gap-2 shrink-0">
-                <span>{{ loop.index }}</span>
+            <div class="flex items-center gap-2 shrink-0 {% if p.name == player_name %}bg-emerald-600/40 px-3 py-1 rounded-full{% endif %}">
+                <span class="text-emerald-400">{{ loop.index }}.</span>
                 <span>{{ p.name }}</span>
                 <span class="font-bold text-emerald-300">{{ p.score }}</span>
             </div>
@@ -28,17 +42,97 @@
     </div>
     
     <div class="p-4">
-        <h2 class="text-xl font-bold mb-4">Find These Items</h2>
+        <h2 class="text-2xl font-bold mb-2">🎯 Tap When You Find It!</h2>
+        <p class="text-emerald-300 mb-4">Tap an item when you spot it in real life</p>
+        
         <div class="grid grid-cols-2 gap-3">
-            {% for item, points in biome['items'].items() %}
-            <div class="glass rounded-xl p-4">
-                <div class="flex justify-between items-start">
-                    <span>{{ item }}</span>
-                    <span class="bg-emerald-600/50 px-2 py-0.5 rounded text-sm">+{{ points }}</span>
+            {% for item_name, item_data in biome['items'].items() %}
+            <div class="glass rounded-xl p-4 item-card {{ item_data['rarity'] }} {% if item_name in found_items %}found{% endif %}" 
+                 onclick="logFind('{{ item_name }}', {{ item_data['points'] }})"
+                 data-item="{{ item_name }}">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-3xl">{{ item_data['emoji'] }}</span>
+                    <span class="bg-emerald-600/50 px-2 py-1 rounded text-sm font-bold">+{{ item_data['points'] }}</span>
                 </div>
+                <div class="font-semibold">{{ item_name }}</div>
+                <div class="text-xs text-emerald-400 capitalize">{{ item_data['rarity'] }}</div>
+                {% if item_name in found_items %}
+                <div class="text-emerald-400 text-sm mt-1">✓ Found!</div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
     </div>
+    
+    <div class="fixed bottom-0 left-0 right-0 glass p-4">
+        <div class="flex gap-3">
+            <a href="/" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏠 Home</a>
+            <a href="/collection" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏆 Collection</a>
+        </div>
+    </div>
+    
+    <script>
+        let currentLat = 0;
+        let currentLng = 0;
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                pos => { currentLat = pos.coords.latitude; currentLng = pos.coords.longitude; },
+                err => console.log("GPS not available"),
+                { enableHighAccuracy: true }
+            );
+        }
+        
+        function showToast(message, isSuccess) {
+            const toast = document.getElementById('toast');
+            const inner = toast.querySelector('div');
+            inner.textContent = message;
+            inner.className = `glass rounded-xl p-4 text-center text-xl font-bold ${isSuccess ? 'bg-emerald-600/50' : 'bg-red-600/50'}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2000);
+        }
+        
+        async function logFind(item, points) {
+            const card = document.querySelector(`[data-item="${item}"]`);
+            if (card.classList.contains('found')) return;
+            
+            try {
+                const response = await fetch('/api/find', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ item: item, lat: currentLat, lng: currentLng })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`🎉 +${data.points} points!`, true);
+                    card.classList.add('found');
+                    card.innerHTML += '<div class="text-emerald-400 text-sm mt-1">✓ Found!</div>';
+                    refreshLeaderboard();
+                } else if (data.error === "Already found") {
+                    showToast("Already found this one!", false);
+                } else {
+                    showToast(data.error || "Error", false);
+                }
+            } catch (e) {
+                showToast("Network error", false);
+            }
+        }
+        
+        async function refreshLeaderboard() {
+            const response = await fetch('/api/leaderboard/{{ game.code }}');
+            const players = await response.json();
+            const lb = document.getElementById('leaderboard');
+            lb.innerHTML = players.map((p, i) => `
+                <div class="flex items-center gap-2 shrink-0 ${p.name === '{{ player_name }}' ? 'bg-emerald-600/40 px-3 py-1 rounded-full' : ''}">
+                    <span class="text-emerald-400">${i + 1}.</span>
+                    <span>${p.name}</span>
+                    <span class="font-bold text-emerald-300">${p.score}</span>
+                </div>
+            `).join('');
+        }
+        
+        setInterval(refreshLeaderboard, 5000);
+    </script>
 </body>
 </html>

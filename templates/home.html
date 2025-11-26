@@ -1,16 +1,41 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NatureHunt</title><script src="https://cdn.tailwindcss.com"></script>
-<style>body{background:linear-gradient(135deg,#134e4a,#1e3a2f,#0f241c);min-height:100vh}
-.glass{background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.2)}
-</style></head><body class="text-white">
-<div class="min-h-screen flex flex-col items-center justify-center p-6">
-<div class="text-center mb-12"><h1 class="text-6xl mb-4">🌲</h1>
-<h1 class="text-5xl font-bold mb-2">NatureHunt</h1>
-<p class="text-emerald-300 text-lg">Explore. Discover. Compete.</p></div>
-<div class="flex flex-col gap-4 w-full max-w-xs">
-<a href="/host" class="glass rounded-2xl p-6 text-center hover:bg-emerald-600/30 transition-all">
-<div class="text-3xl mb-2">🎯</div><div class="text-xl font-semibold">Host Game</div></a>
-<a href="/join" class="glass rounded-2xl p-6 text-center hover:bg-emerald-600/30 transition-all">
-<div class="text-3xl mb-2">🎮</div><div class="text-xl font-semibold">Join Game</div></a>
-</div></div></body></html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NatureHunt 🌲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #134e4a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .glow { box-shadow: 0 0 30px rgba(16, 185, 129, 0.3); }
+    </style>
+</head>
+<body class="text-white">
+    <div class="min-h-screen flex flex-col items-center justify-center p-6">
+        <div class="text-center mb-12">
+            <h1 class="text-7xl mb-4">🌲</h1>
+            <h1 class="text-5xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">NatureHunt</h1>
+            <p class="text-emerald-300 text-xl">Explore. Discover. Compete.</p>
+        </div>
+        <div class="flex flex-col gap-4 w-full max-w-xs">
+            <a href="/host" class="glass glow rounded-2xl p-6 text-center hover:bg-emerald-600/30 transition-all transform hover:scale-105">
+                <div class="text-4xl mb-2">🎯</div>
+                <div class="text-2xl font-bold">Host Game</div>
+                <div class="text-emerald-300">Create a new hunt</div>
+            </a>
+            <a href="/join" class="glass rounded-2xl p-6 text-center hover:bg-emerald-600/30 transition-all transform hover:scale-105">
+                <div class="text-4xl mb-2">🎮</div>
+                <div class="text-2xl font-bold">Join Game</div>
+                <div class="text-emerald-300">Enter a game code</div>
+            </a>
+            <a href="/collection" class="glass rounded-2xl p-6 text-center hover:bg-emerald-600/30 transition-all transform hover:scale-105">
+                <div class="text-4xl mb-2">🏆</div>
+                <div class="text-2xl font-bold">My Collection</div>
+                <div class="text-emerald-300">View your finds</div>
+            </a>
+        </div>
+        <div class="mt-12 text-emerald-400/60 text-sm">v1.0 MVP • Phase 1</div>
+    </div>
+</body>
+</html>

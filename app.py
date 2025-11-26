@@ -7,12 +7,17 @@ import string
 
 load_dotenv()
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "dev")
-supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+app.secret_key = os.getenv("SECRET_KEY", "naturehunt-secret-2024")
+
+# Direct credentials (Render env vars not working)
+SUPABASE_URL = "https://ymxghubshsnuyambaebg.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlteGdodWJzaHNudXlhbWJhZWJnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQwNzUyNzQsImV4cCI6MjA3OTY1MTI3NH0.GFsXNAPjO3bP5NekJVcaeQrQlBDcfCbYAYNqhJZXT5E"
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 BIOMES = {
-    "forest": {"name": "🌲 Forest", "items": {"Oak": 10, "Pine": 15, "Mushroom": 25}},
-    "beach": {"name": "🏖️ Beach", "items": {"Shell": 10, "Crab": 40, "Dolphin": 100}},
+    "forest": {"name": "Forest", "items": {"Oak": 10, "Pine": 15, "Mushroom": 25}},
+    "beach": {"name": "Beach", "items": {"Shell": 10, "Crab": 40, "Starfish": 50}},
 }
 
 def gen_code():

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ biome['name'] }} Hunt</title>
+    <title>Hunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: linear-gradient(135deg, #134e4a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
@@ -28,7 +28,7 @@
     </div>
     
     <div class="p-4">
-        <h2 class="text-xl font-bold mb-4">🎯 Find These Items</h2>
+        <h2 class="text-xl font-bold mb-4">Find These Items</h2>
         <div class="grid grid-cols-2 gap-3">
             {% for item, points in biome['items'].items() %}
             <div class="glass rounded-xl p-4">
@@ -39,29 +39,6 @@
             </div>
             {% endfor %}
         </div>
-        
-        <div class="mt-8 text-center">
-            <div class="text-emerald-300 mb-2">🌲 Phase 1 MVP - More features coming soon!</div>
-            <div class="text-sm text-emerald-400">Camera, GPS, iNaturalist ID in next update</div>
-        </div>
     </div>
-    
-    <script>
-        async function refreshLeaderboard() {
-            const response = await fetch('/api/leaderboard/{{ game.code }}');
-            const players = await response.json();
-            
-            const lb = document.getElementById('leaderboard');
-            lb.innerHTML = players.map((p, i) => `
-                <div class="flex items-center gap-2 shrink-0">
-                    <span>${i + 1}</span>
-                    <span>${p.name}</span>
-                    <span class="font-bold text-emerald-300">${p.score}</span>
-                </div>
-            `).join('');
-        }
-        
-        setInterval(refreshLeaderboard, 10000);
-    </script>
 </body>
 </html>

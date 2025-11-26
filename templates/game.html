@@ -2,24 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Hunt - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #020617; }
         .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-        .found { opacity: 0.3; }
+        .found { opacity: 0.4; }
         .rarity-common { border-left: 3px solid #9ca3af; }
         .rarity-uncommon { border-left: 3px solid #22c55e; }
         .rarity-rare { border-left: 3px solid #3b82f6; }
         .rarity-epic { border-left: 3px solid #a855f7; }
-        .rarity-legendary { border-left: 3px solid #f59e0b; }
+        .rarity-legendary { border-left: 3px solid #f59e0b; box-shadow: 0 0 20px rgba(245,158,11,0.3); }
     </style>
 </head>
 <body class="text-white">
     <!-- Toast -->
     <div id="toast" class="fixed top-4 left-4 right-4 z-[200] hidden">
         <div class="glass rounded-xl p-4 text-center font-bold"></div>
+    </div>
+    
+    <!-- Badge Modal -->
+    <div id="badge-modal" class="fixed inset-0 bg-black/95 z-[300] hidden flex items-center justify-center p-6">
+        <div class="text-center">
+            <div id="badge-icon" class="text-9xl mb-4 animate-bounce"></div>
+            <h2 id="badge-name" class="text-3xl font-bold mb-2"></h2>
+            <p id="badge-desc" class="text-gray-400 mb-4"></p>
+            <p id="badge-pts" class="text-2xl text-emerald-400 mb-6"></p>
+            <button onclick="closeBadge()" class="px-8 py-3 bg-emerald-600 rounded-xl font-bold">Awesome!</button>
+        </div>
     </div>
     
     <!-- Camera Modal -->
@@ -29,207 +40,212 @@
         <div class="absolute top-4 left-4">
             <button onclick="closeCamera()" class="glass rounded-full w-12 h-12 text-2xl">✕</button>
         </div>
-        <div class="absolute bottom-24 left-0 right-0 flex justify-center">
-            <button onclick="snap()" class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
-                <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full"></div>
+        <div class="absolute bottom-20 left-0 right-0 flex justify-center pb-safe">
+            <button onclick="snap()" class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl">
+                <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full"></div>
             </button>
-        </div>
-        <div class="absolute bottom-8 left-0 right-0 text-center text-sm text-gray-400">
-            Tap to capture • Get close & centered
         </div>
     </div>
     
-    <!-- ID Results Modal - IMPROVED -->
-    <div id="id-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto">
-        <div class="p-4 pb-32">
-            <div class="glass rounded-2xl overflow-hidden max-w-lg mx-auto">
-                <!-- Your Photo -->
-                <div class="p-4 border-b border-white/10">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-lg" id="style-label">📸 Analyzing...</span>
-                        <button onclick="closeId()" class="text-2xl">✕</button>
-                    </div>
-                    <div class="text-sm text-gray-400 mb-2">YOUR PHOTO</div>
-                    <img id="preview" class="w-full h-48 object-cover rounded-xl">
-                    <div id="photo-score" class="text-center text-purple-400 mt-2 text-sm"></div>
-                </div>
-                
-                <!-- Loading -->
-                <div id="id-loading" class="p-8 text-center">
-                    <div class="text-4xl animate-pulse mb-2">🔍</div>
-                    <div class="text-gray-400">Identifying specimen...</div>
-                </div>
-                
-                <!-- Results -->
-                <div id="id-results" class="hidden">
-                    <div class="p-3 bg-white/5 text-sm text-gray-400">
-                        POSSIBLE MATCHES - Compare with your photo
-                    </div>
-                    <div id="results-list" class="divide-y divide-white/10"></div>
-                </div>
+    <!-- ID Results Modal -->
+    <div id="id-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto p-4 pb-24">
+        <div class="glass rounded-2xl p-4 max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-3">
+                <span class="font-bold text-lg">🔍 Analysis Results</span>
+                <button onclick="closeId()" class="text-2xl">✕</button>
             </div>
+            <img id="preview" class="w-full h-48 object-cover rounded-xl mb-3">
+            <div id="photo-score" class="text-center mb-4 text-purple-400"></div>
+            <div id="id-loading" class="text-center py-8">
+                <div class="text-5xl animate-pulse mb-2">🔬</div>
+                <p class="text-gray-400">Analyzing...</p>
+            </div>
+            <div id="id-results" class="hidden space-y-3"></div>
         </div>
     </div>
     
     <!-- Header -->
     <div class="glass sticky top-0 z-40 p-3">
         <div class="flex items-center justify-between mb-2">
-            <div class="font-bold">📍 {{ game.biome }}</div>
-            <div class="bg-emerald-600 px-3 py-1 rounded-full font-mono">{{ game.code }}</div>
+            <a href="/" class="text-emerald-400">← Exit</a>
+            <div class="bg-emerald-600 px-4 py-1 rounded-full font-mono text-lg">{{ game.code }}</div>
         </div>
-        <div id="lb" class="flex gap-2 overflow-x-auto pb-1">
+        <div id="leaderboard" class="flex gap-2 overflow-x-auto pb-1">
             {% for p in players %}
             <div class="shrink-0 px-3 py-1 rounded-full text-sm {% if p.name == user_name %}bg-emerald-600/40{% else %}bg-white/10{% endif %}">
-                {{ loop.index }}. {{ p.name }} <span class="text-emerald-400">{{ p.score }}</span>
+                {{ p.name }}: <span class="text-emerald-400">{{ p.score }}</span>
             </div>
             {% endfor %}
         </div>
     </div>
     
-    <!-- Category Tabs -->
-    <div class="sticky top-[88px] z-30 bg-slate-950/90 px-3 py-2">
-        <div class="flex overflow-x-auto gap-2" id="tabs">
-            <button onclick="load('all')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-emerald-600/30" data-c="all">🌍 All</button>
-            <button onclick="load('minerals')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="minerals">💎 Minerals</button>
-            <button onclick="load('plants')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="plants">🌿 Plants</button>
-            <button onclick="load('birds')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="birds">🐦 Birds</button>
-            <button onclick="load('fungi')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="fungi">🍄 Fungi</button>
-        </div>
+    <!-- Tabs -->
+    <div class="sticky top-[76px] z-30 bg-slate-950/90 px-3 py-2 flex gap-2 overflow-x-auto">
+        <button onclick="showTab('minerals')" class="shrink-0 px-4 py-2 rounded-full bg-emerald-600/30" data-tab="minerals">💎 Minerals</button>
+        <button onclick="showTab('fossils')" class="shrink-0 px-4 py-2 rounded-full bg-white/10" data-tab="fossils">🦴 Fossils</button>
     </div>
     
     <!-- Grid -->
-    <div class="p-3 pb-36">
-        <div id="grid" class="grid grid-cols-2 gap-2"></div>
+    <div class="p-3 pb-40">
+        <div id="minerals-grid" class="grid grid-cols-2 gap-3">
+            {% for m in minerals %}
+            <div class="glass rounded-xl overflow-hidden rarity-{{ m.rarity }} {% if m.name in found %}found{% endif %}" 
+                 onclick='showDetail({{ m | tojson | safe }}, "mineral")'>
+                <img src="{{ m.photo }}" class="w-full h-28 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=💎'">
+                <div class="p-3">
+                    <div class="font-bold text-sm truncate">{{ m.name }}</div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs px-2 py-0.5 rounded bg-white/10 capitalize">{{ m.rarity }}</span>
+                        <span class="text-emerald-400 font-bold">+{{ m.points }}</span>
+                    </div>
+                    {% if m.name in found %}<div class="text-emerald-400 text-xs mt-1">✓ Found!</div>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div id="fossils-grid" class="grid grid-cols-2 gap-3 hidden">
+            {% for f in fossils %}
+            <div class="glass rounded-xl overflow-hidden rarity-{{ f.rarity }} {% if f.name in found %}found{% endif %}"
+                 onclick='showDetail({{ f | tojson | safe }}, "fossil")'>
+                <img src="{{ f.photo }}" class="w-full h-28 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=🦴'">
+                <div class="p-3">
+                    <div class="font-bold text-sm truncate">{{ f.name }}</div>
+                    <div class="text-xs text-amber-400 truncate">{{ f.period }}</div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs px-2 py-0.5 rounded bg-white/10 capitalize">{{ f.rarity }}</span>
+                        <span class="text-emerald-400 font-bold">+{{ f.points }}</span>
+                    </div>
+                    {% if f.name in found %}<div class="text-emerald-400 text-xs mt-1">✓ Found!</div>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
     
-    <!-- Camera FAB -->
+    <!-- Camera Button -->
     <div class="fixed z-40" style="bottom: 100px; left: 50%; transform: translateX(-50%);">
-        <button onclick="openCam()" class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl text-4xl">
+        <button onclick="openCamera()" class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl text-4xl">
             📸
         </button>
     </div>
     
     <!-- Bottom Nav -->
-    <div class="fixed bottom-0 left-0 right-0 glass z-30">
-        <div class="flex p-2 gap-2">
-            <a href="/" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-xl">🏠</a>
-            <a href="/reference" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-xl">📚</a>
-            <a href="/profile" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-xl">👤</a>
+    <div class="fixed bottom-0 left-0 right-0 glass z-30 pb-safe">
+        <div class="flex p-3 gap-3">
+            <a href="/" class="flex-1 py-3 bg-white/5 rounded-xl text-center">🏠</a>
+            <a href="/reference" class="flex-1 py-3 bg-white/5 rounded-xl text-center">📚</a>
         </div>
     </div>
     
     <script>
-        const code = "{{ game.code }}";
+        const gameCode = "{{ game.code }}";
         const userName = "{{ user_name }}";
-        const found = new Set({{ found_items | tojson }});
-        let lat = {{ lat }}, lng = {{ lng }};
-        let stream, snapData, photoScore = 50;
+        const found = new Set({{ found | tojson }});
+        let stream, photoData, photoScore = 50;
         
-        navigator.geolocation?.watchPosition(p => {
-            lat = p.coords.latitude;
-            lng = p.coords.longitude;
-        });
-        
-        async function load(cat) {
-            document.querySelectorAll('[data-c]').forEach(b => {
-                b.className = `shrink-0 px-3 py-1.5 rounded-full text-sm ${b.dataset.c === cat ? 'bg-emerald-600/30' : 'bg-white/10'}`;
-            });
+        function showTab(tab) {
+            document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('bg-emerald-600/30'));
+            document.querySelectorAll('[data-tab]').forEach(b => b.classList.add('bg-white/10'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('bg-emerald-600/30');
+            document.querySelector(`[data-tab="${tab}"]`).classList.remove('bg-white/10');
             
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '<div class="col-span-2 text-center py-8"><div class="text-4xl animate-pulse">🔍</div></div>';
-            
-            const r = await fetch(`/api/species?lat=${lat}&lng=${lng}&category=${cat}`);
-            const data = await r.json();
-            
-            let items = [];
-            for (const [c, list] of Object.entries(data.categories || {})) {
-                list.forEach(i => { i._cat = c; items.push(i); });
-            }
-            
-            const order = {legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4};
-            items.sort((a,b) => (order[a.rarity]||5) - (order[b.rarity]||5));
-            
-            grid.innerHTML = items.map(i => {
-                const f = found.has(i.name);
-                const em = {minerals:'💎',rocks:'🪨',fossils:'🦴',plants:'🌿',birds:'🐦',mammals:'🦊',fungi:'🍄'}[i._cat] || '🔍';
-                return `
-                <div class="glass rounded-xl overflow-hidden rarity-${i.rarity||'common'} ${f?'found':''}" onclick='showItem(${JSON.stringify(i).replace(/'/g,"&#39;")})'>
-                    ${i.photo ? `<img src="${i.photo}" class="w-full h-24 object-cover" loading="lazy" onerror="this.parentElement.querySelector('.fallback').classList.remove('hidden');this.remove();">` : ''}
-                    <div class="fallback h-24 bg-white/5 items-center justify-center text-3xl ${i.photo ? 'hidden' : 'flex'}">${em}</div>
-                    <div class="p-2">
-                        <div class="font-medium text-sm truncate">${i.name}</div>
-                        <div class="flex justify-between mt-1">
-                            <span class="text-xs text-gray-400 capitalize">${i.rarity||'common'}</span>
-                            <span class="text-xs text-emerald-400">+${i.points}</span>
-                        </div>
-                        ${f ? '<div class="text-emerald-400 text-xs mt-1">✓ Found</div>' : ''}
-                    </div>
-                </div>`;
-            }).join('');
+            document.getElementById('minerals-grid').classList.add('hidden');
+            document.getElementById('fossils-grid').classList.add('hidden');
+            document.getElementById(`${tab}-grid`).classList.remove('hidden');
         }
         
-        function showItem(i) {
-            const em = {minerals:'💎',plants:'🌿',birds:'🐦',fungi:'🍄'}[i._cat] || '🔍';
+        function showDetail(item, type) {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black/95 z-50 overflow-y-auto p-4';
+            modal.id = 'detail-modal';
+            
             modal.innerHTML = `
                 <div class="glass rounded-2xl max-w-md mx-auto overflow-hidden">
-                    ${i.photo ? `<img src="${i.photo}" class="w-full h-52 object-cover">` : `<div class="h-52 bg-white/5 flex items-center justify-center text-6xl">${em}</div>`}
-                    <div class="p-4">
-                        <div class="flex justify-between mb-3">
+                    <img src="${item.photo}" class="w-full h-56 object-cover" onerror="this.src='https://via.placeholder.com/400?text=${type}'">
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-3">
                             <div>
-                                <h2 class="text-xl font-bold">${i.name}</h2>
-                                ${i.scientific ? `<div class="text-gray-400 text-sm italic">${i.scientific}</div>` : ''}
+                                <h2 class="text-2xl font-bold">${item.name}</h2>
+                                <div class="text-gray-400 italic">${item.scientific || item.period || ''}</div>
                             </div>
-                            <div class="bg-emerald-600 px-3 py-1 rounded-full h-fit">+${i.points}</div>
+                            <div class="bg-emerald-600 px-4 py-2 rounded-full font-bold">+${item.points}</div>
                         </div>
-                        ${i.description ? `<p class="text-gray-300 text-sm mb-4">${i.description}</p>` : ''}
-                        <div class="flex flex-wrap gap-2 mb-4">
-                            <span class="px-2 py-1 rounded bg-white/10 text-xs capitalize">${i.rarity||'common'}</span>
-                            ${i.hardness ? `<span class="px-2 py-1 rounded bg-white/10 text-xs">Hardness: ${i.hardness}</span>` : ''}
-                            ${i.colors ? `<span class="px-2 py-1 rounded bg-white/10 text-xs">${i.colors.slice(0,3).join(', ')}</span>` : ''}
+                        
+                        <p class="text-gray-300 mb-4">${item.description}</p>
+                        
+                        ${item.identify ? `
+                        <div class="bg-amber-500/20 rounded-xl p-3 mb-4">
+                            <div class="font-bold text-amber-400 mb-1">⚠️ How to Identify</div>
+                            <p class="text-sm">${item.identify}</p>
                         </div>
-                        <div class="flex gap-2">
-                            <button onclick="quickLog('${i.name.replace(/'/g,"\\'")}','${i._cat}',${i.points});this.closest('.fixed').remove();" class="flex-1 py-3 bg-emerald-600 rounded-xl font-bold">✓ LOG FIND</button>
-                            <button onclick="this.closest('.fixed').remove();openCam();" class="py-3 px-4 bg-white/10 rounded-xl">📸</button>
+                        ` : ''}
+                        
+                        ${item.how_to_find ? `
+                        <div class="bg-emerald-500/20 rounded-xl p-3 mb-4">
+                            <div class="font-bold text-emerald-400 mb-1">🔍 Where to Find</div>
+                            <p class="text-sm">${item.how_to_find}</p>
                         </div>
-                        <button onclick="this.closest('.fixed').remove();" class="w-full mt-2 py-2 bg-white/5 rounded-xl text-sm">Close</button>
+                        ` : ''}
+                        
+                        <div class="flex gap-3">
+                            <button onclick="logFind('${item.name.replace(/'/g, "\\'")}', ${item.points}, '${item.rarity}', '${type}')" 
+                                    class="flex-1 py-4 bg-emerald-600 rounded-xl font-bold text-lg">
+                                ✓ Log Find
+                            </button>
+                            <button onclick="document.getElementById('detail-modal').remove(); openCamera();" 
+                                    class="py-4 px-5 bg-white/10 rounded-xl text-2xl">📸</button>
+                        </div>
+                        
+                        <button onclick="document.getElementById('detail-modal').remove();" 
+                                class="w-full mt-3 py-3 bg-white/5 rounded-xl">Close</button>
                     </div>
-                </div>`;
+                </div>
+            `;
+            
             document.body.appendChild(modal);
         }
         
-        async function quickLog(name, cat, pts) {
-            toast('Logging...');
-            const r = await fetch('/api/quick_log', {
+        async function logFind(name, points, rarity, category) {
+            document.getElementById('detail-modal')?.remove();
+            toast('Logging find...');
+            
+            const r = await fetch('/api/confirm_find', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({name, category: cat, points: pts})
+                body: JSON.stringify({name, points, rarity, category, photo_score: 50})
             });
-            const d = await r.json();
-            if (d.success) {
-                toast(`🎉 +${d.points} points!`, true);
+            
+            const data = await r.json();
+            
+            if (data.success) {
                 found.add(name);
-                refreshLb();
+                toast(`🎉 ${name}! +${data.points} pts (${data.style})`, true);
+                refreshLeaderboard();
+                
+                // Show badges
+                if (data.badges?.length > 0) {
+                    setTimeout(() => showBadge(data.badges[0]), 500);
+                }
+                
+                // Update UI
+                document.querySelectorAll('.glass').forEach(el => {
+                    if (el.textContent.includes(name)) el.classList.add('found');
+                });
             } else {
-                toast(d.error, false);
+                toast(data.error || 'Error', false);
             }
         }
         
-        function toast(msg, ok=true) {
-            const t = document.getElementById('toast');
-            t.querySelector('div').textContent = msg;
-            t.querySelector('div').className = `glass rounded-xl p-4 text-center font-bold ${ok ? 'bg-emerald-600/30' : 'bg-red-600/30'}`;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 2500);
-        }
-        
-        async function openCam() {
+        async function openCamera() {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}, audio: false});
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 1920 } },
+                    audio: false
+                });
                 document.getElementById('camera').srcObject = stream;
                 document.getElementById('camera-modal').classList.remove('hidden');
-            } catch(e) {
+            } catch (e) {
                 toast('Camera access needed!', false);
             }
         }
@@ -240,104 +256,123 @@
         }
         
         function snap() {
-            const v = document.getElementById('camera');
-            const c = document.getElementById('canvas');
-            c.width = v.videoWidth;
-            c.height = v.videoHeight;
-            c.getContext('2d').drawImage(v, 0, 0);
-            snapData = c.toDataURL('image/jpeg', 0.8);
+            const video = document.getElementById('camera');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            photoData = canvas.toDataURL('image/jpeg', 0.85);
             closeCamera();
-            identify();
+            identifyPhoto();
         }
         
-        async function identify() {
-            const modal = document.getElementById('id-modal');
-            document.getElementById('preview').src = snapData;
+        async function identifyPhoto() {
+            document.getElementById('preview').src = photoData;
             document.getElementById('id-loading').classList.remove('hidden');
             document.getElementById('id-results').classList.add('hidden');
-            document.getElementById('style-label').textContent = '📸 Analyzing...';
-            document.getElementById('photo-score').textContent = '';
-            modal.classList.remove('hidden');
+            document.getElementById('id-modal').classList.remove('hidden');
             
             const r = await fetch('/api/identify', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({image: snapData, lat, lng})
+                body: JSON.stringify({image: photoData})
             });
-            const d = await r.json();
             
-            photoScore = d.photo_score || 50;
-            document.getElementById('style-label').textContent = d.style_label || '📸 Photo';
-            document.getElementById('photo-score').textContent = `Style Score: ${photoScore}/100 • ${d.style_multiplier || 1}x bonus`;
+            const data = await r.json();
+            photoScore = data.photo_score || 50;
+            
+            document.getElementById('photo-score').innerHTML = `📸 Photo Quality: <span class="font-bold text-white">${photoScore}/100</span>`;
             document.getElementById('id-loading').classList.add('hidden');
             
-            const list = document.getElementById('results-list');
-            list.innerHTML = (d.results || []).map(r => `
-                <div class="p-3 hover:bg-white/5 cursor-pointer" onclick="confirmFind('${r.name.replace(/'/g,"\\'")}','${r.category}',${r.points})">
-                    <div class="flex gap-3">
-                        <div class="shrink-0">
-                            ${r.photo ? `<img src="${r.photo}" class="w-20 h-20 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/80?text=?'">` : '<div class="w-20 h-20 bg-white/10 rounded-lg flex items-center justify-center text-2xl">?</div>'}
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex justify-between items-start">
-                                <div class="font-bold truncate">${r.name}</div>
-                                <div class="text-emerald-400 font-bold shrink-0 ml-2">+${r.points}</div>
-                            </div>
-                            <div class="flex items-center gap-2 mt-1">
-                                <div class="text-sm ${r.confidence > 70 ? 'text-emerald-400' : r.confidence > 40 ? 'text-yellow-400' : 'text-gray-400'}">
-                                    ${r.confidence}% match
-                                </div>
-                                <div class="text-xs text-gray-500">${r.source || ''}</div>
-                            </div>
-                            ${r.description ? `<div class="text-xs text-gray-400 mt-1 line-clamp-2">${r.description}</div>` : ''}
-                            ${r.colors ? `<div class="text-xs text-gray-500 mt-1">Colors: ${r.colors.slice(0,3).join(', ')}</div>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+            const results = document.getElementById('id-results');
             
-            document.getElementById('id-results').classList.remove('hidden');
+            if (data.results?.length > 0) {
+                results.innerHTML = data.results.map(r => `
+                    <div class="glass rounded-xl p-4 rarity-${r.rarity || 'common'}" onclick="confirmFromId(${JSON.stringify(r).replace(/"/g, '&quot;')})">
+                        <div class="flex gap-3 items-center">
+                            ${r.photo ? `<img src="${r.photo}" class="w-16 h-16 rounded-xl object-cover">` : '<div class="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center text-2xl">🔍</div>'}
+                            <div class="flex-1">
+                                <div class="font-bold">${r.name}</div>
+                                <div class="text-xs text-gray-400">${r.scientific_name || ''}</div>
+                                <div class="flex gap-2 mt-1">
+                                    <span class="text-xs px-2 py-0.5 rounded bg-emerald-600/30">${r.score}%</span>
+                                    <span class="text-xs px-2 py-0.5 rounded bg-white/10 capitalize">${r.rarity || 'common'}</span>
+                                </div>
+                            </div>
+                            <div class="text-emerald-400 font-bold">+${r.points}</div>
+                        </div>
+                        ${r.identify ? `<div class="mt-2 text-xs text-amber-400">⚠️ ${r.identify}</div>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                results.innerHTML = '<div class="text-center text-gray-400 py-8">No matches. Try a clearer photo.</div>';
+            }
+            
+            results.classList.remove('hidden');
         }
         
-        async function confirmFind(name, cat, pts) {
+        async function confirmFromId(result) {
             closeId();
-            toast('Confirming find...');
+            toast('Confirming...');
+            
             const r = await fetch('/api/confirm_find', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    name, category: cat, points: pts,
-                    photo_score: photoScore, image: snapData,
-                    lat, lng
+                    name: result.name,
+                    points: result.points,
+                    rarity: result.rarity || 'common',
+                    category: result.category,
+                    photo_score: photoScore
                 })
             });
-            const d = await r.json();
-            if (d.success) {
-                toast(`🎉 ${name}! +${d.points} points!`, true);
-                found.add(name);
-                refreshLb();
+            
+            const data = await r.json();
+            
+            if (data.success) {
+                found.add(result.name);
+                toast(`🎉 ${result.name}! +${data.points} (${data.style})`, true);
+                refreshLeaderboard();
+                
+                if (data.badges?.length > 0) {
+                    setTimeout(() => showBadge(data.badges[0]), 500);
+                }
             } else {
-                toast(d.error, false);
+                toast(data.error || 'Error', false);
             }
         }
         
-        function closeId() {
-            document.getElementById('id-modal').classList.add('hidden');
+        function closeId() { document.getElementById('id-modal').classList.add('hidden'); }
+        
+        function showBadge(badge) {
+            document.getElementById('badge-icon').textContent = badge.icon;
+            document.getElementById('badge-name').textContent = badge.name;
+            document.getElementById('badge-desc').textContent = badge.desc;
+            document.getElementById('badge-pts').textContent = `+${badge.points} XP`;
+            document.getElementById('badge-modal').classList.remove('hidden');
         }
         
-        async function refreshLb() {
-            const r = await fetch(`/api/leaderboard/${code}`);
+        function closeBadge() { document.getElementById('badge-modal').classList.add('hidden'); }
+        
+        function toast(msg, success = true) {
+            const t = document.getElementById('toast');
+            t.querySelector('div').textContent = msg;
+            t.querySelector('div').className = `glass rounded-xl p-4 text-center font-bold ${success ? 'bg-emerald-600/30' : 'bg-red-600/30'}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+        
+        async function refreshLeaderboard() {
+            const r = await fetch(`/api/leaderboard/${gameCode}`);
             const players = await r.json();
-            document.getElementById('lb').innerHTML = players.map((p,i) => `
-                <div class="shrink-0 px-3 py-1 rounded-full text-sm ${p.name === userName ? 'bg-emerald-600/40' : 'bg-white/10'}">
-                    ${i+1}. ${p.name} <span class="text-emerald-400">${p.score}</span>
-                </div>
-            `).join('');
+            document.getElementById('leaderboard').innerHTML = players.map(p => 
+                `<div class="shrink-0 px-3 py-1 rounded-full text-sm ${p.name === userName ? 'bg-emerald-600/40' : 'bg-white/10'}">
+                    ${p.name}: <span class="text-emerald-400">${p.score}</span>
+                </div>`
+            ).join('');
         }
         
-        // Initial load
-        load('all');
-        setInterval(refreshLb, 5000);
+        setInterval(refreshLeaderboard, 5000);
     </script>
 </body>
 </html>

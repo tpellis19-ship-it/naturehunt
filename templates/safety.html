@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety - NatureHunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="text-white p-6 pb-20">
+    <a href="/" class="text-emerald-400 mb-4 block text-lg">← Back</a>
+    
+    <h1 class="text-4xl font-black mb-2">⚠️ Safety Guide</h1>
+    <p class="text-gray-400 mb-6">Critical information for foraging safely</p>
+    
+    <div class="bg-red-500/20 border border-red-500 rounded-xl p-6 mb-6">
+        <h2 class="text-xl font-bold text-red-400 mb-2">🚨 IMPORTANT DISCLAIMER</h2>
+        <p class="text-sm">AI identification is NOT 100% accurate. <strong>NEVER eat any wild plant, mushroom, or berry based solely on AI identification.</strong> Always verify with multiple expert sources and/or a trained mycologist or botanist. Misidentification can be FATAL.</p>
+    </div>
+    
+    <h2 class="text-2xl font-bold mb-4">☠️ Deadly Species</h2>
+    <div class="space-y-3 mb-8">
+        {% for name, info in dangerous.items() %}
+        {% if info.level == 'deadly' %}
+        <div class="glass rounded-xl p-4 border-l-4 border-red-500">
+            <div class="font-bold text-red-400">{{ name }}</div>
+            <div class="text-sm text-gray-300">{{ info.warning }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    
+    <h2 class="text-2xl font-bold mb-4">⚠️ Dangerous Lookalikes</h2>
+    <div class="space-y-3 mb-8">
+        {% for safe, dangers in lookalikes.items() %}
+        <div class="glass rounded-xl p-4">
+            <div class="font-bold text-amber-400">{{ safe }}</div>
+            <div class="text-sm text-gray-300">Can be confused with: {{ dangers | join(', ') }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <h2 class="text-2xl font-bold mb-4">✅ Safe Foraging Rules</h2>
+    <div class="glass rounded-xl p-6 space-y-3 text-sm">
+        <p>1. <strong>Never eat anything you can't 100% identify</strong></p>
+        <p>2. <strong>Use multiple identification methods</strong> - field guides, experts, spore prints</p>
+        <p>3. <strong>When in doubt, throw it out</strong></p>
+        <p>4. <strong>Start with easily identifiable species</strong> with no dangerous lookalikes</p>
+        <p>5. <strong>Join local mycology/botany groups</strong> to learn from experts</p>
+        <p>6. <strong>Keep samples</strong> of anything you eat in case of emergency</p>
+        <p>7. <strong>Know your local poison control number</strong></p>
+    </div>
+</body>
+</html>

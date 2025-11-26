@@ -2,47 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Host Hunt - NatureHunt</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Host - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { font-family: 'Inter', sans-serif; }
         body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
     </style>
 </head>
-<body class="text-white">
+<body class="text-white safe-bottom">
     <div class="min-h-screen flex flex-col items-center justify-center p-6">
-        <a href="/" class="text-emerald-400 mb-6 flex items-center gap-2">← Back</a>
+        <a href="/" class="text-emerald-400 mb-6 flex items-center gap-2 text-lg">← Back</a>
         
         <div class="glass rounded-3xl p-8 w-full max-w-md">
             <div class="text-center mb-6">
-                <div class="text-5xl mb-2">📸</div>
+                <div class="text-6xl mb-3">📸</div>
                 <h1 class="text-3xl font-bold">Host Hunt</h1>
                 <p id="location-status" class="text-gray-400 mt-2">Detecting location...</p>
             </div>
             
             {% if error %}<div class="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-4 text-center">{{ error }}</div>{% endif %}
             
-            <form method="POST" id="host-form" class="space-y-6">
+            <form method="POST" class="space-y-6">
                 <input type="hidden" name="lat" id="lat">
                 <input type="hidden" name="lng" id="lng">
                 
                 <div>
                     <label class="block text-gray-300 mb-2 text-sm font-medium">Your Name</label>
                     <input type="text" name="name" required 
-                        class="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none text-lg transition-all"
+                        class="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none text-xl"
                         placeholder="Enter your name">
                 </div>
                 
-                <div id="preview-box" class="glass rounded-xl p-4 hidden">
-                    <div class="text-xs text-gray-400 mb-2">Species detected in your area:</div>
-                    <div id="preview-species" class="flex gap-2 overflow-x-auto pb-2"></div>
-                </div>
-                
                 <button type="submit" id="start-btn" disabled
-                    class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-gray-600 disabled:to-gray-700 rounded-xl font-bold text-lg transition-all transform hover:scale-[1.02] disabled:transform-none">
+                    class="w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:from-gray-600 disabled:to-gray-700 rounded-xl font-bold text-xl transition-all">
                     🚀 Start Hunt
                 </button>
             </form>
@@ -50,38 +46,18 @@
     </div>
     
     <script>
-        const statusEl = document.getElementById('location-status');
-        const startBtn = document.getElementById('start-btn');
-        const previewBox = document.getElementById('preview-box');
-        const previewSpecies = document.getElementById('preview-species');
-        
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                async pos => {
+                pos => {
                     document.getElementById('lat').value = pos.coords.latitude;
                     document.getElementById('lng').value = pos.coords.longitude;
-                    statusEl.textContent = '📍 Location detected!';
-                    statusEl.className = 'text-emerald-400 mt-2';
-                    startBtn.disabled = false;
-                    
-                    // Fetch preview
-                    try {
-                        const res = await fetch(`/api/species?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}&category=birds`);
-                        const data = await res.json();
-                        if (data.categories && data.categories.birds) {
-                            previewBox.classList.remove('hidden');
-                            previewSpecies.innerHTML = data.categories.birds.slice(0, 6).map(s => `
-                                <div class="shrink-0 text-center">
-                                    <img src="${s.photo}" class="w-12 h-12 rounded-lg object-cover mx-auto mb-1" onerror="this.style.display='none'">
-                                    <div class="text-xs text-gray-400 w-16 truncate">${s.name}</div>
-                                </div>
-                            `).join('');
-                        }
-                    } catch(e) {}
+                    document.getElementById('location-status').textContent = '📍 Location detected!';
+                    document.getElementById('location-status').className = 'text-emerald-400 mt-2';
+                    document.getElementById('start-btn').disabled = false;
                 },
-                err => {
-                    statusEl.textContent = '⚠️ Enable location to continue';
-                    statusEl.className = 'text-amber-400 mt-2';
+                () => {
+                    document.getElementById('location-status').textContent = '⚠️ Enable location to continue';
+                    document.getElementById('location-status').className = 'text-amber-400 mt-2';
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );

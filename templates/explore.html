@@ -5,80 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; }
         body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="text-white pb-20">
     <div class="p-6">
-        <a href="/" class="text-emerald-400 mb-4 block">← Back</a>
+        <a href="/" class="text-emerald-400 mb-4 block text-lg">← Back</a>
         <h1 class="text-3xl font-bold mb-1">🔬 Explore</h1>
-        <p class="text-gray-400 mb-6" id="location">📍 {{ location.display }}</p>
+        <p class="text-gray-400 mb-6">📍 {{ location.display }}</p>
         
-        <!-- Category Filter -->
         <div class="flex overflow-x-auto gap-2 mb-6 pb-2">
-            {% for key, cat in categories.items() %}
-            <button onclick="loadExplore('{{ key }}')" class="shrink-0 px-4 py-2 rounded-full glass text-sm" data-cat="{{ key }}">
-                {{ cat.emoji }} {{ cat.name }}
-            </button>
-            {% endfor %}
+            <button onclick="load('birds')" class="shrink-0 px-4 py-2 rounded-full glass text-sm" data-cat="birds">🐦 Birds</button>
+            <button onclick="load('mammals')" class="shrink-0 px-4 py-2 rounded-full glass text-sm" data-cat="mammals">🦊 Mammals</button>
+            <button onclick="load('plants')" class="shrink-0 px-4 py-2 rounded-full glass text-sm" data-cat="plants">🌿 Plants</button>
+            <button onclick="load('fungi')" class="shrink-0 px-4 py-2 rounded-full glass text-sm" data-cat="fungi">🍄 Fungi</button>
+            <button onclick="load('minerals')" class="shrink-0 px-4 py-2 rounded-full glass text-sm" data-cat="minerals">💎 Minerals</button>
+            <button onclick="load('fossils')" class="shrink-0 px-4 py-2 rounded-full glass text-sm" data-cat="fossils">🦴 Fossils</button>
         </div>
         
         <div id="results" class="space-y-4">
             <div class="glass rounded-xl p-8 text-center">
-                <div class="text-4xl mb-2 animate-pulse">🔍</div>
-                <div>Loading species data...</div>
+                <div class="text-5xl mb-2 animate-pulse">🔍</div>
+                <div>Select a category to explore</div>
             </div>
         </div>
     </div>
     
     <script>
-        const lat = {{ lat }};
-        const lng = {{ lng }};
+        const lat = {{ lat }}, lng = {{ lng }};
         
-        async function loadExplore(category) {
-            const results = document.getElementById('results');
-            results.innerHTML = '<div class="glass rounded-xl p-8 text-center"><div class="text-4xl mb-2 animate-pulse">🔍</div><div>Loading...</div></div>';
-            
+        async function load(cat) {
             document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('bg-emerald-600/30'));
-            document.querySelector(`[data-cat="${category}"]`)?.classList.add('bg-emerald-600/30');
+            document.querySelector(`[data-cat="${cat}"]`)?.classList.add('bg-emerald-600/30');
             
-            try {
-                const res = await fetch(`/api/species?lat=${lat}&lng=${lng}&category=${category}`);
-                const data = await res.json();
-                
-                let items = data.categories?.[category] || [];
-                if (!items.length) {
-                    results.innerHTML = '<div class="glass rounded-xl p-8 text-center"><div class="text-4xl mb-2">🌍</div><div>No data for this category here</div></div>';
-                    return;
-                }
-                
-                results.innerHTML = items.map(item => `
-                    <div class="glass rounded-xl p-4">
-                        <div class="flex gap-4">
-                            ${item.photo ? `<img src="${item.photo}" class="w-20 h-20 rounded-lg object-cover">` : '<div class="w-20 h-20 bg-white/10 rounded-lg flex items-center justify-center text-3xl">🔍</div>'}
-                            <div class="flex-1">
-                                <div class="font-bold text-lg">${item.name}</div>
-                                <div class="text-gray-400 text-sm italic">${item.scientific || ''}</div>
-                                <div class="flex gap-2 mt-2">
-                                    <span class="text-xs px-2 py-1 rounded bg-white/10 capitalize">${item.rarity || 'common'}</span>
-                                    ${item.observations ? `<span class="text-xs px-2 py-1 rounded bg-white/10">${item.observations.toLocaleString()} obs</span>` : ''}
-                                </div>
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="glass rounded-xl p-8 text-center"><div class="text-5xl mb-2 animate-pulse">🔍</div><div>Loading...</div></div>';
+            
+            const res = await fetch(`/api/species?lat=${lat}&lng=${lng}&category=${cat}`);
+            const data = await res.json();
+            const items = data.categories?.[cat] || [];
+            
+            if (!items.length) {
+                results.innerHTML = '<div class="glass rounded-xl p-8 text-center">No data found</div>';
+                return;
+            }
+            
+            results.innerHTML = items.map(item => `
+                <div class="glass rounded-xl p-4">
+                    <div class="flex gap-4">
+                        ${item.photo ? `<img src="${item.photo}" class="w-20 h-20 rounded-lg object-cover">` : '<div class="w-20 h-20 bg-white/10 rounded-lg flex items-center justify-center text-3xl">🔍</div>'}
+                        <div class="flex-1">
+                            <div class="font-bold text-lg">${item.name}</div>
+                            <div class="text-gray-400 text-sm italic">${item.scientific || ''}</div>
+                            <div class="flex gap-2 mt-2 flex-wrap">
+                                <span class="text-xs px-2 py-1 rounded bg-white/10 capitalize">${item.rarity || 'common'}</span>
+                                <span class="text-xs px-2 py-1 rounded bg-emerald-600/30 text-emerald-400">+${item.points || 10}</span>
                             </div>
-                            <div class="text-emerald-400 font-bold">+${item.points || (item.multiplier ? item.multiplier * 10 : 10)}</div>
                         </div>
                     </div>
-                `).join('');
-            } catch(e) {
-                results.innerHTML = '<div class="glass rounded-xl p-8 text-center text-red-400">Error loading data</div>';
-            }
+                </div>
+            `).join('');
         }
         
-        // Auto-load first category
-        loadExplore('birds');
+        load('birds');
     </script>
 </body>
 </html>

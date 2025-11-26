@@ -2,55 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NatureHunt 🌍 Ultimate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NatureHunt 🌍</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; }
+        * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
         .glow-green { box-shadow: 0 0 60px rgba(16, 185, 129, 0.4), 0 0 120px rgba(16, 185, 129, 0.2); }
-        .glow-purple { box-shadow: 0 0 60px rgba(139, 92, 246, 0.4); }
-        .gradient-text { background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .gradient-text { background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
         .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .card-hover:hover { transform: translateY(-4px) scale(1.02); }
+        .card-hover:active { transform: scale(0.98); }
         .animate-float { animation: float 6s ease-in-out infinite; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        .category-scroll { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 1rem; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-        .category-scroll::-webkit-scrollbar { height: 4px; }
-        .category-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
     </style>
 </head>
-<body class="text-white">
+<body class="text-white safe-bottom">
     <div class="min-h-screen flex flex-col">
-        <!-- Hero -->
         <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute inset-0 overflow-hidden pointer-events-none">
                 <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-float"></div>
                 <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
             </div>
             
             <div class="relative z-10 text-center mb-8">
                 <div class="text-8xl mb-6 animate-float">🌍</div>
-                <h1 class="text-6xl font-extrabold mb-3 gradient-text">NatureHunt</h1>
-                <p class="text-xl text-gray-300 mb-2">AI-Powered Discovery Platform</p>
+                <h1 class="text-5xl font-black mb-3 gradient-text">NatureHunt</h1>
+                <p class="text-xl text-gray-300 mb-2">AI-Powered Discovery</p>
                 <p class="text-sm text-gray-500">Plants • Animals • Minerals • Fossils • Artifacts</p>
             </div>
             
-            <!-- Category Preview -->
-            <div class="w-full max-w-2xl mb-8 relative z-10">
-                <div class="category-scroll">
-                    {% for key, cat in categories.items() %}
-                    <div class="shrink-0 glass rounded-2xl p-4 w-24 text-center scroll-snap-start">
-                        <div class="text-3xl mb-1">{{ cat.emoji }}</div>
-                        <div class="text-xs text-gray-400">{{ cat.name }}</div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            
-            <!-- Main Actions -->
             <div class="flex flex-col gap-4 w-full max-w-sm relative z-10">
                 <a href="/host" class="glass glow-green rounded-2xl p-6 text-center card-hover">
                     <div class="text-4xl mb-2">📸</div>
@@ -68,27 +52,29 @@
                     <a href="/explore" class="glass rounded-2xl p-5 text-center card-hover">
                         <div class="text-3xl mb-1">🔬</div>
                         <div class="font-bold">Explore</div>
-                        <div class="text-xs text-cyan-400">Your Area</div>
                     </a>
                     <a href="/map" class="glass rounded-2xl p-5 text-center card-hover">
                         <div class="text-3xl mb-1">🗺️</div>
                         <div class="font-bold">Map</div>
-                        <div class="text-xs text-purple-400">Interactive</div>
                     </a>
                 </div>
                 
-                <a href="/collection" class="glass rounded-2xl p-5 text-center card-hover">
-                    <div class="text-3xl mb-1">🏆</div>
-                    <div class="font-bold">My Collection</div>
-                    <div class="text-xs text-amber-400">View Discoveries</div>
-                </a>
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="/collection" class="glass rounded-2xl p-5 text-center card-hover">
+                        <div class="text-3xl mb-1">🏆</div>
+                        <div class="font-bold">Collection</div>
+                    </a>
+                    <a href="/safety" class="glass rounded-2xl p-5 text-center card-hover border border-amber-500/30">
+                        <div class="text-3xl mb-1">⚠️</div>
+                        <div class="font-bold text-amber-400">Safety</div>
+                    </a>
+                </div>
             </div>
         </div>
         
-        <!-- Footer -->
         <div class="text-center py-6 text-gray-600 text-xs">
-            <p>Powered by iNaturalist • GBIF • Paleobiology DB</p>
-            <p class="mt-1">Contributing to global citizen science 🌍</p>
+            <p>⚠️ AI IDs are guides only - verify before eating anything wild</p>
+            <p class="mt-1">Powered by iNaturalist • Paleobiology DB • v3.0</p>
         </div>
     </div>
     

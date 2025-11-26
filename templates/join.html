@@ -3,33 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join Game - NatureHunt</title>
+    <title>Join Hunt - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: linear-gradient(135deg, #134e4a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
-        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="text-white">
     <div class="min-h-screen flex flex-col items-center justify-center p-6">
-        <a href="/" class="text-emerald-300 mb-6 text-lg">← Back</a>
+        <a href="/" class="text-emerald-300 mb-6">← Back</a>
+        
         <div class="glass rounded-3xl p-8 w-full max-w-md">
-            <h1 class="text-4xl font-bold mb-6 text-center">🎮 Join Game</h1>
+            <h1 class="text-4xl font-bold mb-6 text-center">🎮 Join Hunt</h1>
+            
             {% if error %}<div class="bg-red-500/30 rounded-lg p-3 mb-4 text-center">{{ error }}</div>{% endif %}
-            <form method="POST" class="space-y-6">
+            
+            <form method="POST" id="join-form" class="space-y-6">
+                <input type="hidden" name="lat" id="lat">
+                <input type="hidden" name="lng" id="lng">
+                
                 <div>
-                    <label class="block text-emerald-300 mb-2 text-lg">Game Code</label>
-                    <input type="text" name="code" required maxlength="4" class="w-full px-4 py-4 rounded-xl bg-white/10 border border-white/20 focus:border-emerald-400 focus:outline-none text-center text-4xl tracking-widest uppercase" placeholder="XXXX">
+                    <label class="block text-emerald-300 mb-2">Game Code</label>
+                    <input type="text" name="code" required maxlength="4" 
+                        class="w-full px-4 py-4 rounded-xl bg-white/10 border border-white/20 focus:border-emerald-400 focus:outline-none text-center text-4xl tracking-widest uppercase" 
+                        placeholder="XXXX">
                 </div>
+                
                 <div>
-                    <label class="block text-emerald-300 mb-2 text-lg">Your Name</label>
-                    <input type="text" name="name" required class="w-full px-4 py-4 rounded-xl bg-white/10 border border-white/20 focus:border-emerald-400 focus:outline-none text-xl" placeholder="Enter your name">
+                    <label class="block text-emerald-300 mb-2">Your Name</label>
+                    <input type="text" name="name" required 
+                        class="w-full px-4 py-4 rounded-xl bg-white/10 border border-white/20 focus:border-emerald-400 focus:outline-none text-xl" 
+                        placeholder="Explorer name">
                 </div>
-                <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-xl transition-all">
+                
+                <button type="submit" class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-xl">
                     🎯 Join Hunt
                 </button>
             </form>
         </div>
     </div>
+    
+    <script>
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('lat').value = pos.coords.latitude;
+                document.getElementById('lng').value = pos.coords.longitude;
+            });
+        }
+    </script>
 </body>
 </html>

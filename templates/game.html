@@ -3,34 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ biome['name'] }} Hunt</title>
+    <title>Hunt - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: linear-gradient(135deg, #134e4a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
-        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
-        .found { opacity: 0.5; pointer-events: none; }
-        .item-card { transition: all 0.3s; }
-        .item-card:active { transform: scale(0.95); }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         .toast { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .common { border-left: 4px solid #9CA3AF; }
-        .uncommon { border-left: 4px solid #10B981; }
-        .rare { border-left: 4px solid #3B82F6; }
-        .legendary { border-left: 4px solid #F59E0B; }
+        @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } }
+        .modal { animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } }
+        .found { opacity: 0.4; }
     </style>
 </head>
-<body class="text-white pb-32">
-    <div id="toast" class="fixed top-4 left-4 right-4 z-50 hidden">
-        <div class="glass rounded-xl p-4 text-center text-xl font-bold"></div>
+<body class="text-white pb-40">
+    <!-- Toast -->
+    <div id="toast" class="fixed top-4 left-4 right-4 z-[100] hidden">
+        <div class="glass rounded-xl p-4 text-center text-lg font-bold"></div>
     </div>
     
-    <div class="glass sticky top-0 z-40 p-4">
-        <div class="flex items-center justify-between mb-3">
-            <div class="text-xl font-bold">{{ biome['name'] }}</div>
-            <div class="bg-emerald-600 px-4 py-2 rounded-full text-lg font-mono font-bold">{{ game.code }}</div>
+    <!-- Camera Modal -->
+    <div id="camera-modal" class="fixed inset-0 bg-black/90 z-50 hidden modal">
+        <div class="h-full flex flex-col">
+            <div class="p-4 flex justify-between items-center">
+                <button onclick="closeCamera()" class="text-2xl">✕</button>
+                <div class="text-lg font-bold">📸 Take Photo</div>
+                <div></div>
+            </div>
+            <div class="flex-1 relative">
+                <video id="camera-feed" class="w-full h-full object-cover" autoplay playsinline></video>
+                <canvas id="photo-canvas" class="hidden"></canvas>
+            </div>
+            <div class="p-6 flex justify-center">
+                <button onclick="capturePhoto()" class="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+                    <div class="w-16 h-16 bg-red-500 rounded-full"></div>
+                </button>
+            </div>
         </div>
-        <div class="text-sm text-emerald-300 mb-2">Share code with friends to join!</div>
-        <div id="leaderboard" class="flex gap-3 overflow-x-auto pb-2">
+    </div>
+    
+    <!-- Identification Modal -->
+    <div id="identify-modal" class="fixed inset-0 bg-black/90 z-50 hidden modal overflow-y-auto">
+        <div class="min-h-full p-4">
+            <div class="glass rounded-3xl p-6 max-w-md mx-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="text-xl font-bold">🔬 AI Identification</div>
+                    <button onclick="closeIdentify()" class="text-2xl">✕</button>
+                </div>
+                <img id="captured-photo" class="w-full rounded-xl mb-4">
+                <div id="identify-loading" class="text-center py-8">
+                    <div class="text-4xl mb-2">🔍</div>
+                    <div>Analyzing with AI...</div>
+                </div>
+                <div id="identify-results" class="hidden space-y-3"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <div class="glass sticky top-0 z-40 p-4">
+        <div class="flex items-center justify-between mb-2">
+            <div>
+                <div class="text-lg font-bold">📍 {{ location }}</div>
+                <div class="text-xs text-emerald-300">{{ species|length }} species nearby</div>
+            </div>
+            <div class="bg-emerald-600 px-4 py-2 rounded-full font-mono font-bold text-lg">{{ game.code }}</div>
+        </div>
+        <div id="leaderboard" class="flex gap-3 overflow-x-auto pb-1">
             {% for p in players %}
             <div class="flex items-center gap-2 shrink-0 {% if p.name == player_name %}bg-emerald-600/40 px-3 py-1 rounded-full{% endif %}">
                 <span class="text-emerald-400">{{ loop.index }}.</span>
@@ -41,95 +79,240 @@
         </div>
     </div>
     
+    <!-- Camera Button -->
+    <div class="fixed bottom-24 left-1/2 -translate-x-1/2 z-30">
+        <button onclick="openCamera()" class="w-20 h-20 bg-emerald-500 hover:bg-emerald-400 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50 transition-all transform hover:scale-110">
+            <span class="text-4xl">📸</span>
+        </button>
+    </div>
+    
+    <!-- Species to Find -->
     <div class="p-4">
-        <h2 class="text-2xl font-bold mb-2">🎯 Tap When You Find It!</h2>
-        <p class="text-emerald-300 mb-4">Tap an item when you spot it in real life</p>
+        <h2 class="text-xl font-bold mb-1">🎯 Species in Your Area</h2>
+        <p class="text-emerald-300 text-sm mb-4">Take a photo when you spot one!</p>
         
+        {% if species %}
         <div class="grid grid-cols-2 gap-3">
-            {% for item_name, item_data in biome['items'].items() %}
-            <div class="glass rounded-xl p-4 item-card {{ item_data['rarity'] }} {% if item_name in found_items %}found{% endif %}" 
-                 onclick="logFind('{{ item_name }}', {{ item_data['points'] }})"
-                 data-item="{{ item_name }}">
-                <div class="flex justify-between items-start mb-2">
-                    <span class="text-3xl">{{ item_data['emoji'] }}</span>
-                    <span class="bg-emerald-600/50 px-2 py-1 rounded text-sm font-bold">+{{ item_data['points'] }}</span>
+            {% for s in species %}
+            <div class="glass rounded-xl p-3 {% if s.name in found_species %}found{% endif %}" data-species="{{ s.name }}">
+                {% if s.photo %}
+                <img src="{{ s.photo }}" class="w-full h-24 object-cover rounded-lg mb-2">
+                {% else %}
+                <div class="w-full h-24 bg-white/10 rounded-lg mb-2 flex items-center justify-center text-4xl">
+                    {% if s.iconic == 'Plantae' %}🌿{% elif s.iconic == 'Fungi' %}🍄{% elif s.iconic == 'Aves' %}🐦{% elif s.iconic == 'Mammalia' %}🦊{% elif s.iconic == 'Insecta' %}🦋{% else %}🔍{% endif %}
                 </div>
-                <div class="font-semibold">{{ item_name }}</div>
-                <div class="text-xs text-emerald-400 capitalize">{{ item_data['rarity'] }}</div>
-                {% if item_name in found_items %}
-                <div class="text-emerald-400 text-sm mt-1">✓ Found!</div>
+                {% endif %}
+                <div class="font-semibold text-sm truncate">{{ s.name }}</div>
+                <div class="text-xs text-emerald-400">{{ s.iconic }}</div>
+                {% if s.name in found_species %}
+                <div class="text-emerald-400 text-xs mt-1">✓ Found!</div>
                 {% endif %}
             </div>
             {% endfor %}
         </div>
+        {% else %}
+        <div class="glass rounded-xl p-8 text-center">
+            <div class="text-4xl mb-2">🔍</div>
+            <div>Loading species data...</div>
+        </div>
+        {% endif %}
     </div>
     
-    <div class="fixed bottom-0 left-0 right-0 glass p-4">
+    <!-- Bottom Nav -->
+    <div class="fixed bottom-0 left-0 right-0 glass p-4 z-20">
         <div class="flex gap-3">
-            <a href="/" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏠 Home</a>
-            <a href="/collection" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏆 Collection</a>
+            <a href="/" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏠</a>
+            <a href="/collection" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏆</a>
+            <button onclick="shareGame()" class="flex-1 py-3 bg-white/10 rounded-xl font-semibold">📤</button>
         </div>
     </div>
     
     <script>
-        let currentLat = 0;
-        let currentLng = 0;
+        const gameCode = "{{ game.code }}";
+        const playerName = "{{ player_name }}";
+        let currentLat = {{ lat }};
+        let currentLng = {{ lng }};
+        let mediaStream = null;
+        let capturedImage = null;
         
+        // GPS tracking
         if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(
-                pos => { currentLat = pos.coords.latitude; currentLng = pos.coords.longitude; },
-                err => console.log("GPS not available"),
-                { enableHighAccuracy: true }
-            );
+            navigator.geolocation.watchPosition(pos => {
+                currentLat = pos.coords.latitude;
+                currentLng = pos.coords.longitude;
+            }, null, { enableHighAccuracy: true });
         }
         
-        function showToast(message, isSuccess) {
+        function showToast(message, isSuccess = true) {
             const toast = document.getElementById('toast');
             const inner = toast.querySelector('div');
             inner.textContent = message;
-            inner.className = `glass rounded-xl p-4 text-center text-xl font-bold ${isSuccess ? 'bg-emerald-600/50' : 'bg-red-600/50'}`;
+            inner.className = `glass rounded-xl p-4 text-center text-lg font-bold ${isSuccess ? 'bg-emerald-600/50' : 'bg-red-600/50'}`;
             toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2000);
+            setTimeout(() => toast.classList.add('hidden'), 3000);
         }
         
-        async function logFind(item, points) {
-            const card = document.querySelector(`[data-item="${item}"]`);
-            if (card.classList.contains('found')) return;
+        async function openCamera() {
+            const modal = document.getElementById('camera-modal');
+            const video = document.getElementById('camera-feed');
             
             try {
-                const response = await fetch('/api/find', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ item: item, lat: currentLat, lng: currentLng })
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+                    audio: false 
                 });
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast(`🎉 +${data.points} points!`, true);
-                    card.classList.add('found');
-                    card.innerHTML += '<div class="text-emerald-400 text-sm mt-1">✓ Found!</div>';
-                    refreshLeaderboard();
-                } else if (data.error === "Already found") {
-                    showToast("Already found this one!", false);
-                } else {
-                    showToast(data.error || "Error", false);
-                }
-            } catch (e) {
-                showToast("Network error", false);
+                video.srcObject = mediaStream;
+                modal.classList.remove('hidden');
+            } catch (err) {
+                showToast('Camera access needed!', false);
             }
         }
         
+        function closeCamera() {
+            const modal = document.getElementById('camera-modal');
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            modal.classList.add('hidden');
+        }
+        
+        function capturePhoto() {
+            const video = document.getElementById('camera-feed');
+            const canvas = document.getElementById('photo-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            capturedImage = canvas.toDataURL('image/jpeg', 0.8);
+            
+            closeCamera();
+            identifyPhoto();
+        }
+        
+        async function identifyPhoto() {
+            const modal = document.getElementById('identify-modal');
+            const photo = document.getElementById('captured-photo');
+            const loading = document.getElementById('identify-loading');
+            const results = document.getElementById('identify-results');
+            
+            photo.src = capturedImage;
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+            modal.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/identify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: capturedImage,
+                        lat: currentLat,
+                        lng: currentLng
+                    })
+                });
+                
+                const data = await response.json();
+                loading.classList.add('hidden');
+                
+                if (data.results && data.results.length > 0) {
+                    results.innerHTML = data.results.map(r => `
+                        <div class="glass rounded-xl p-4 cursor-pointer hover:bg-emerald-600/30 transition-all"
+                             onclick="confirmFind('${r.name}', '${r.scientific}', '${r.iconic}', ${r.score})">
+                            <div class="flex gap-3 items-center">
+                                ${r.photo ? `<img src="${r.photo}" class="w-16 h-16 rounded-lg object-cover">` : '<div class="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">🔍</div>'}
+                                <div class="flex-1">
+                                    <div class="font-bold">${r.name}</div>
+                                    <div class="text-sm text-emerald-300 italic">${r.scientific}</div>
+                                    <div class="text-xs text-emerald-400">${r.iconic} • ${Math.round(r.score * 100)}% match</div>
+                                </div>
+                                <div class="text-2xl">→</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    results.classList.remove('hidden');
+                } else {
+                    results.innerHTML = `
+                        <div class="text-center py-4">
+                            <div class="text-4xl mb-2">🤔</div>
+                            <div>Couldn't identify. Try a clearer photo!</div>
+                            <button onclick="closeIdentify(); openCamera();" class="mt-4 px-6 py-2 bg-emerald-600 rounded-lg">Try Again</button>
+                        </div>
+                    `;
+                    results.classList.remove('hidden');
+                }
+            } catch (err) {
+                loading.classList.add('hidden');
+                results.innerHTML = '<div class="text-center text-red-400">Error analyzing photo. Try again.</div>';
+                results.classList.remove('hidden');
+            }
+        }
+        
+        async function confirmFind(name, scientific, iconic, score) {
+            closeIdentify();
+            showToast('🔍 Confirming find...', true);
+            
+            try {
+                const response = await fetch('/api/confirm_find', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        scientific: scientific,
+                        iconic: iconic,
+                        photo: capturedImage,
+                        lat: currentLat,
+                        lng: currentLng,
+                        observations: 1000
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`🎉 ${name}! +${data.points} points!`, true);
+                    
+                    // Mark as found
+                    document.querySelectorAll(`[data-species="${name}"]`).forEach(el => {
+                        el.classList.add('found');
+                    });
+                    
+                    refreshLeaderboard();
+                } else {
+                    showToast(data.error || 'Error logging find', false);
+                }
+            } catch (err) {
+                showToast('Network error', false);
+            }
+        }
+        
+        function closeIdentify() {
+            document.getElementById('identify-modal').classList.add('hidden');
+        }
+        
         async function refreshLeaderboard() {
-            const response = await fetch('/api/leaderboard/{{ game.code }}');
+            const response = await fetch(`/api/leaderboard/${gameCode}`);
             const players = await response.json();
             const lb = document.getElementById('leaderboard');
             lb.innerHTML = players.map((p, i) => `
-                <div class="flex items-center gap-2 shrink-0 ${p.name === '{{ player_name }}' ? 'bg-emerald-600/40 px-3 py-1 rounded-full' : ''}">
+                <div class="flex items-center gap-2 shrink-0 ${p.name === playerName ? 'bg-emerald-600/40 px-3 py-1 rounded-full' : ''}">
                     <span class="text-emerald-400">${i + 1}.</span>
                     <span>${p.name}</span>
                     <span class="font-bold text-emerald-300">${p.score}</span>
                 </div>
             `).join('');
+        }
+        
+        function shareGame() {
+            const url = window.location.origin + '/join';
+            const text = `Join my NatureHunt! Code: ${gameCode}`;
+            if (navigator.share) {
+                navigator.share({ title: 'NatureHunt', text: text, url: url });
+            } else {
+                navigator.clipboard.writeText(`${text} - ${url}`);
+                showToast('Game code copied!', true);
+            }
         }
         
         setInterval(refreshLeaderboard, 5000);

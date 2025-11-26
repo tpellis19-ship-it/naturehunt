@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Collection - NatureHunt</title>
+    <title>Collection - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background: linear-gradient(135deg, #134e4a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
-        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="text-white">
     <div class="p-6">
-        <a href="/" class="text-emerald-300 mb-6 block text-lg">← Back</a>
-        <h1 class="text-4xl font-bold mb-2">🏆 My Collection</h1>
-        <p class="text-emerald-300 mb-6">{{ finds|length }} items found</p>
+        <a href="/" class="text-emerald-300 mb-4 block">← Back</a>
+        
+        <h1 class="text-4xl font-bold mb-1">🏆 Collection</h1>
+        <p class="text-emerald-300 mb-6">{{ finds|length }} species • {{ total_points }} total points</p>
         
         {% if finds %}
         <div class="space-y-3">
@@ -25,16 +26,24 @@
                         <div class="text-xl font-bold">{{ find.item_name }}</div>
                         <div class="text-emerald-400 text-sm">{{ find.category }} • +{{ find.points }} pts</div>
                     </div>
-                    <div class="text-2xl">✓</div>
+                    <div class="text-3xl">
+                        {% if find.category == 'Plantae' %}🌿
+                        {% elif find.category == 'Fungi' %}🍄
+                        {% elif find.category == 'Aves' %}🐦
+                        {% elif find.category == 'Mammalia' %}🦊
+                        {% elif find.category == 'Insecta' %}🦋
+                        {% else %}✓{% endif %}
+                    </div>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
         <div class="glass rounded-xl p-8 text-center">
-            <div class="text-6xl mb-4">🔍</div>
-            <div class="text-xl">No finds yet!</div>
-            <div class="text-emerald-300">Join a game and start exploring</div>
+            <div class="text-6xl mb-4">📸</div>
+            <div class="text-xl mb-2">No discoveries yet!</div>
+            <div class="text-emerald-300">Join a hunt and photograph species</div>
+            <a href="/" class="inline-block mt-4 px-6 py-3 bg-emerald-600 rounded-xl font-bold">Start Hunting</a>
         </div>
         {% endif %}
     </div>

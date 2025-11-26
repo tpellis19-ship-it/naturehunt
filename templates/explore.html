@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore - NatureHunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="text-white">
+    <div class="p-6">
+        <a href="/" class="text-emerald-300 mb-4 block">← Back</a>
+        
+        <h1 class="text-3xl font-bold mb-1">🔬 Explore</h1>
+        <p class="text-emerald-300 mb-6">📍 {{ location }} • {{ species|length }} species observed</p>
+        
+        {% if species %}
+        <div class="space-y-3">
+            {% for s in species %}
+            <div class="glass rounded-xl p-4">
+                <div class="flex gap-4">
+                    {% if s.photo %}
+                    <img src="{{ s.photo }}" class="w-20 h-20 rounded-lg object-cover">
+                    {% else %}
+                    <div class="w-20 h-20 bg-white/10 rounded-lg flex items-center justify-center text-3xl">🔍</div>
+                    {% endif %}
+                    <div class="flex-1">
+                        <div class="font-bold text-lg">{{ s.name }}</div>
+                        <div class="text-emerald-300 text-sm italic">{{ s.scientific }}</div>
+                        <div class="text-emerald-400 text-xs mt-1">{{ s.iconic }} • {{ s.observations }} observations</div>
+                        {% if s.wikipedia %}
+                        <a href="{{ s.wikipedia }}" target="_blank" class="text-cyan-400 text-xs mt-1 inline-block">Learn more →</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="glass rounded-xl p-8 text-center">
+            <div class="text-6xl mb-4">🌍</div>
+            <div class="text-xl mb-2">Enable location to explore</div>
+            <div class="text-emerald-300">Discover species observed in your area</div>
+        </div>
+        {% endif %}
+        
+        <div class="mt-6 text-center text-emerald-400/50 text-xs">
+            Data from iNaturalist • Contributing to citizen science
+        </div>
+    </div>
+    
+    <script>
+        // Auto-detect location
+        if (!{{ lat }} && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                window.location.href = `/explore?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`;
+            });
+        }
+    </script>
+</body>
+</html>

@@ -3,57 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NatureHunt 🌍</title>
+    <title>NatureHunt 🌍 Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
-        .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-        .glow { box-shadow: 0 0 40px rgba(16, 185, 129, 0.4); }
+        * { font-family: 'Inter', sans-serif; }
+        body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .glow-green { box-shadow: 0 0 60px rgba(16, 185, 129, 0.4), 0 0 120px rgba(16, 185, 129, 0.2); }
+        .glow-purple { box-shadow: 0 0 60px rgba(139, 92, 246, 0.4); }
+        .gradient-text { background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-hover:hover { transform: translateY(-4px) scale(1.02); }
+        .animate-float { animation: float 6s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .category-scroll { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 1rem; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .category-scroll::-webkit-scrollbar { height: 4px; }
+        .category-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
     </style>
 </head>
 <body class="text-white">
-    <div class="min-h-screen flex flex-col items-center justify-center p-6">
-        <div class="text-center mb-10">
-            <div class="text-8xl mb-4">🌍</div>
-            <h1 class="text-5xl font-bold mb-2 bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">NatureHunt</h1>
-            <p class="text-emerald-300 text-xl">AI-Powered Nature Discovery</p>
-            <p class="text-emerald-400/60 text-sm mt-2">Photograph • Identify • Compete • Contribute</p>
+    <div class="min-h-screen flex flex-col">
+        <!-- Hero -->
+        <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+            <div class="absolute inset-0 overflow-hidden">
+                <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-float"></div>
+                <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
+            </div>
+            
+            <div class="relative z-10 text-center mb-8">
+                <div class="text-8xl mb-6 animate-float">🌍</div>
+                <h1 class="text-6xl font-extrabold mb-3 gradient-text">NatureHunt</h1>
+                <p class="text-xl text-gray-300 mb-2">AI-Powered Discovery Platform</p>
+                <p class="text-sm text-gray-500">Plants • Animals • Minerals • Fossils • Artifacts</p>
+            </div>
+            
+            <!-- Category Preview -->
+            <div class="w-full max-w-2xl mb-8 relative z-10">
+                <div class="category-scroll">
+                    {% for key, cat in categories.items() %}
+                    <div class="shrink-0 glass rounded-2xl p-4 w-24 text-center scroll-snap-start">
+                        <div class="text-3xl mb-1">{{ cat.emoji }}</div>
+                        <div class="text-xs text-gray-400">{{ cat.name }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Main Actions -->
+            <div class="flex flex-col gap-4 w-full max-w-sm relative z-10">
+                <a href="/host" class="glass glow-green rounded-2xl p-6 text-center card-hover">
+                    <div class="text-4xl mb-2">📸</div>
+                    <div class="text-2xl font-bold">Host Hunt</div>
+                    <div class="text-emerald-400 text-sm">Create a multiplayer game</div>
+                </a>
+                
+                <a href="/join" class="glass rounded-2xl p-6 text-center card-hover">
+                    <div class="text-4xl mb-2">🎮</div>
+                    <div class="text-2xl font-bold">Join Hunt</div>
+                    <div class="text-gray-400 text-sm">Enter a game code</div>
+                </a>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="/explore" class="glass rounded-2xl p-5 text-center card-hover">
+                        <div class="text-3xl mb-1">🔬</div>
+                        <div class="font-bold">Explore</div>
+                        <div class="text-xs text-cyan-400">Your Area</div>
+                    </a>
+                    <a href="/map" class="glass rounded-2xl p-5 text-center card-hover">
+                        <div class="text-3xl mb-1">🗺️</div>
+                        <div class="font-bold">Map</div>
+                        <div class="text-xs text-purple-400">Interactive</div>
+                    </a>
+                </div>
+                
+                <a href="/collection" class="glass rounded-2xl p-5 text-center card-hover">
+                    <div class="text-3xl mb-1">🏆</div>
+                    <div class="font-bold">My Collection</div>
+                    <div class="text-xs text-amber-400">View Discoveries</div>
+                </a>
+            </div>
         </div>
         
-        <div class="flex flex-col gap-4 w-full max-w-sm">
-            <a href="/host" class="glass glow rounded-2xl p-6 text-center hover:bg-emerald-600/20 transition-all transform hover:scale-105">
-                <div class="text-4xl mb-2">📸</div>
-                <div class="text-2xl font-bold">Host Hunt</div>
-                <div class="text-emerald-300 text-sm">Create game at your location</div>
-            </a>
-            
-            <a href="/join" class="glass rounded-2xl p-6 text-center hover:bg-emerald-600/20 transition-all transform hover:scale-105">
-                <div class="text-4xl mb-2">🎮</div>
-                <div class="text-2xl font-bold">Join Hunt</div>
-                <div class="text-emerald-300 text-sm">Enter a game code</div>
-            </a>
-            
-            <a href="/explore" class="glass rounded-2xl p-6 text-center hover:bg-cyan-600/20 transition-all transform hover:scale-105">
-                <div class="text-4xl mb-2">🔬</div>
-                <div class="text-2xl font-bold">Explore</div>
-                <div class="text-cyan-300 text-sm">Discover species near you</div>
-            </a>
-            
-            <a href="/collection" class="glass rounded-2xl p-6 text-center hover:bg-amber-600/20 transition-all transform hover:scale-105">
-                <div class="text-4xl mb-2">🏆</div>
-                <div class="text-2xl font-bold">Collection</div>
-                <div class="text-amber-300 text-sm">Your discoveries</div>
-            </a>
-        </div>
-        
-        <div class="mt-10 text-center text-emerald-400/50 text-xs">
-            <p>Powered by iNaturalist • Contributing to citizen science</p>
-            <p class="mt-1">v2.0 AI Edition</p>
+        <!-- Footer -->
+        <div class="text-center py-6 text-gray-600 text-xs">
+            <p>Powered by iNaturalist • GBIF • Paleobiology DB</p>
+            <p class="mt-1">Contributing to global citizen science 🌍</p>
         </div>
     </div>
     
     <script>
-        // Pre-fetch location for faster game start
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(pos => {
                 localStorage.setItem('nh_lat', pos.coords.latitude);

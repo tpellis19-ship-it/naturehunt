@@ -5,135 +5,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hunt - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 50%, #0f241c 100%); min-height: 100vh; }
-        .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        * { font-family: 'Inter', sans-serif; }
+        body { background: #020617; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .species-card { transition: all 0.2s; }
+        .species-card:active { transform: scale(0.98); }
+        .found { opacity: 0.4; pointer-events: none; }
+        .rarity-common { border-left: 4px solid #9ca3af; }
+        .rarity-uncommon { border-left: 4px solid #22c55e; }
+        .rarity-rare { border-left: 4px solid #3b82f6; }
+        .rarity-epic { border-left: 4px solid #a855f7; }
+        .rarity-legendary { border-left: 4px solid #f59e0b; animation: legendary-glow 2s infinite; }
+        @keyframes legendary-glow { 0%, 100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); } 50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); } }
         .toast { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } }
         .modal { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } }
-        .found { opacity: 0.4; }
+        .tab-active { background: rgba(16, 185, 129, 0.2); border-color: #10b981; }
+        #map { height: 200px; border-radius: 1rem; }
+        .category-tab { scroll-snap-align: start; }
     </style>
 </head>
-<body class="text-white pb-40">
+<body class="text-white pb-36">
     <!-- Toast -->
-    <div id="toast" class="fixed top-4 left-4 right-4 z-[100] hidden">
-        <div class="glass rounded-xl p-4 text-center text-lg font-bold"></div>
+    <div id="toast" class="fixed top-4 left-4 right-4 z-[100] hidden toast">
+        <div class="glass rounded-xl p-4 text-center font-bold"></div>
     </div>
     
     <!-- Camera Modal -->
-    <div id="camera-modal" class="fixed inset-0 bg-black/90 z-50 hidden modal">
+    <div id="camera-modal" class="fixed inset-0 bg-black z-50 hidden modal">
         <div class="h-full flex flex-col">
-            <div class="p-4 flex justify-between items-center">
-                <button onclick="closeCamera()" class="text-2xl">✕</button>
-                <div class="text-lg font-bold">📸 Take Photo</div>
-                <div></div>
+            <div class="p-4 flex justify-between items-center bg-black/50">
+                <button onclick="closeCamera()" class="text-3xl">✕</button>
+                <div class="font-bold">📸 Photograph Your Find</div>
+                <div class="w-8"></div>
             </div>
-            <div class="flex-1 relative">
+            <div class="flex-1 relative bg-black">
                 <video id="camera-feed" class="w-full h-full object-cover" autoplay playsinline></video>
                 <canvas id="photo-canvas" class="hidden"></canvas>
             </div>
-            <div class="p-6 flex justify-center">
-                <button onclick="capturePhoto()" class="w-20 h-20 bg-white rounded-full flex items-center justify-center">
-                    <div class="w-16 h-16 bg-red-500 rounded-full"></div>
+            <div class="p-6 flex justify-center bg-black/50">
+                <button onclick="capturePhoto()" class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl">
+                    <div class="w-20 h-20 bg-red-500 rounded-full border-4 border-white"></div>
                 </button>
             </div>
         </div>
     </div>
     
-    <!-- Identification Modal -->
-    <div id="identify-modal" class="fixed inset-0 bg-black/90 z-50 hidden modal overflow-y-auto">
-        <div class="min-h-full p-4">
-            <div class="glass rounded-3xl p-6 max-w-md mx-auto">
+    <!-- Identify Modal -->
+    <div id="identify-modal" class="fixed inset-0 bg-black/95 z-50 hidden modal overflow-y-auto">
+        <div class="min-h-full p-4 pb-20">
+            <div class="glass rounded-3xl p-6 max-w-lg mx-auto">
                 <div class="flex justify-between items-center mb-4">
-                    <div class="text-xl font-bold">🔬 AI Identification</div>
+                    <h2 class="text-xl font-bold">🔬 AI Identification</h2>
                     <button onclick="closeIdentify()" class="text-2xl">✕</button>
                 </div>
                 <img id="captured-photo" class="w-full rounded-xl mb-4">
                 <div id="identify-loading" class="text-center py-8">
-                    <div class="text-4xl mb-2">🔍</div>
-                    <div>Analyzing with AI...</div>
+                    <div class="text-5xl mb-3 animate-pulse">🔍</div>
+                    <div class="text-lg">Analyzing with AI...</div>
+                    <div class="text-sm text-gray-400">Checking against millions of species</div>
                 </div>
                 <div id="identify-results" class="hidden space-y-3"></div>
             </div>
         </div>
     </div>
     
-    <!-- Header -->
-    <div class="glass sticky top-0 z-40 p-4">
-        <div class="flex items-center justify-between mb-2">
-            <div>
-                <div class="text-lg font-bold">📍 {{ location }}</div>
-                <div class="text-xs text-emerald-300">{{ species|length }} species nearby</div>
+    <!-- Species Detail Modal -->
+    <div id="species-modal" class="fixed inset-0 bg-black/95 z-50 hidden modal overflow-y-auto">
+        <div class="min-h-full p-4 pb-20">
+            <div class="glass rounded-3xl max-w-lg mx-auto overflow-hidden">
+                <div id="species-detail"></div>
             </div>
-            <div class="bg-emerald-600 px-4 py-2 rounded-full font-mono font-bold text-lg">{{ game.code }}</div>
-        </div>
-        <div id="leaderboard" class="flex gap-3 overflow-x-auto pb-1">
-            {% for p in players %}
-            <div class="flex items-center gap-2 shrink-0 {% if p.name == player_name %}bg-emerald-600/40 px-3 py-1 rounded-full{% endif %}">
-                <span class="text-emerald-400">{{ loop.index }}.</span>
-                <span>{{ p.name }}</span>
-                <span class="font-bold text-emerald-300">{{ p.score }}</span>
-            </div>
-            {% endfor %}
         </div>
     </div>
     
-    <!-- Camera Button -->
+    <!-- Header -->
+    <div class="glass sticky top-0 z-40">
+        <div class="p-4">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <div class="font-bold text-lg" id="location-name">Loading...</div>
+                    <div class="text-xs text-gray-400" id="species-count">Scanning for species...</div>
+                </div>
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 rounded-full font-mono font-bold text-lg tracking-wider">{{ game.code }}</div>
+            </div>
+            
+            <!-- Leaderboard -->
+            <div id="leaderboard" class="flex gap-3 overflow-x-auto pb-2">
+                {% for p in players %}
+                <div class="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full {% if p.name == player_name %}bg-emerald-600/30 border border-emerald-500/50{% else %}bg-white/5{% endif %}">
+                    <span class="text-sm {% if loop.index == 1 %}text-amber-400{% elif loop.index == 2 %}text-gray-300{% elif loop.index == 3 %}text-amber-600{% else %}text-gray-500{% endif %}">{{ loop.index }}</span>
+                    <span class="font-medium">{{ p.name }}</span>
+                    <span class="font-bold text-emerald-400">{{ p.score }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Category Tabs -->
+        <div class="flex overflow-x-auto gap-2 px-4 pb-3" id="category-tabs">
+            <button onclick="loadCategory('all')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium tab-active category-tab" data-cat="all">🌍 All</button>
+            <button onclick="loadCategory('plants')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="plants">🌿 Plants</button>
+            <button onclick="loadCategory('birds')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="birds">🐦 Birds</button>
+            <button onclick="loadCategory('mammals')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="mammals">🦊 Mammals</button>
+            <button onclick="loadCategory('fungi')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="fungi">🍄 Fungi</button>
+            <button onclick="loadCategory('insects')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="insects">🦋 Insects</button>
+            <button onclick="loadCategory('reptiles')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="reptiles">🦎 Reptiles</button>
+            <button onclick="loadCategory('minerals')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="minerals">💎 Minerals</button>
+            <button onclick="loadCategory('fossils')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="fossils">🦴 Fossils</button>
+            <button onclick="loadCategory('artifacts')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium category-tab" data-cat="artifacts">🏺 Artifacts</button>
+        </div>
+    </div>
+    
+    <!-- Mini Map -->
+    <div class="p-4">
+        <div id="map" class="glass"></div>
+    </div>
+    
+    <!-- Species Grid -->
+    <div class="px-4">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-bold">🎯 Find & Photograph</h2>
+            <div class="text-sm text-gray-400" id="grid-count"></div>
+        </div>
+        <div id="species-grid" class="grid grid-cols-2 gap-3">
+            <div class="glass rounded-xl p-8 col-span-2 text-center">
+                <div class="text-4xl mb-2 animate-pulse">🔍</div>
+                <div>Loading species data...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Camera FAB -->
     <div class="fixed bottom-24 left-1/2 -translate-x-1/2 z-30">
-        <button onclick="openCamera()" class="w-20 h-20 bg-emerald-500 hover:bg-emerald-400 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50 transition-all transform hover:scale-110">
+        <button onclick="openCamera()" class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/50 transition-all transform hover:scale-110 active:scale-95">
             <span class="text-4xl">📸</span>
         </button>
     </div>
     
-    <!-- Species to Find -->
-    <div class="p-4">
-        <h2 class="text-xl font-bold mb-1">🎯 Species in Your Area</h2>
-        <p class="text-emerald-300 text-sm mb-4">Take a photo when you spot one!</p>
-        
-        {% if species %}
-        <div class="grid grid-cols-2 gap-3">
-            {% for s in species %}
-            <div class="glass rounded-xl p-3 {% if s.name in found_species %}found{% endif %}" data-species="{{ s.name }}">
-                {% if s.photo %}
-                <img src="{{ s.photo }}" class="w-full h-24 object-cover rounded-lg mb-2">
-                {% else %}
-                <div class="w-full h-24 bg-white/10 rounded-lg mb-2 flex items-center justify-center text-4xl">
-                    {% if s.iconic == 'Plantae' %}🌿{% elif s.iconic == 'Fungi' %}🍄{% elif s.iconic == 'Aves' %}🐦{% elif s.iconic == 'Mammalia' %}🦊{% elif s.iconic == 'Insecta' %}🦋{% else %}🔍{% endif %}
-                </div>
-                {% endif %}
-                <div class="font-semibold text-sm truncate">{{ s.name }}</div>
-                <div class="text-xs text-emerald-400">{{ s.iconic }}</div>
-                {% if s.name in found_species %}
-                <div class="text-emerald-400 text-xs mt-1">✓ Found!</div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="glass rounded-xl p-8 text-center">
-            <div class="text-4xl mb-2">🔍</div>
-            <div>Loading species data...</div>
-        </div>
-        {% endif %}
-    </div>
-    
     <!-- Bottom Nav -->
-    <div class="fixed bottom-0 left-0 right-0 glass p-4 z-20">
-        <div class="flex gap-3">
-            <a href="/" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏠</a>
-            <a href="/collection" class="flex-1 py-3 bg-white/10 rounded-xl text-center font-semibold">🏆</a>
-            <button onclick="shareGame()" class="flex-1 py-3 bg-white/10 rounded-xl font-semibold">📤</button>
+    <div class="fixed bottom-0 left-0 right-0 glass z-20">
+        <div class="flex p-3 gap-2">
+            <a href="/" class="flex-1 py-3 bg-white/5 rounded-xl text-center">🏠</a>
+            <a href="/collection" class="flex-1 py-3 bg-white/5 rounded-xl text-center">🏆</a>
+            <a href="/map?lat={{ lat }}&lng={{ lng }}" class="flex-1 py-3 bg-white/5 rounded-xl text-center">🗺️</a>
+            <button onclick="shareGame()" class="flex-1 py-3 bg-white/5 rounded-xl text-center">📤</button>
         </div>
     </div>
     
     <script>
         const gameCode = "{{ game.code }}";
         const playerName = "{{ player_name }}";
+        const foundItems = {{ found_items | tojson }};
         let currentLat = {{ lat }};
         let currentLng = {{ lng }};
         let mediaStream = null;
         let capturedImage = null;
+        let speciesData = {};
+        let map = null;
+        
+        // Initialize map
+        document.addEventListener('DOMContentLoaded', () => {
+            map = L.map('map').setView([currentLat, currentLng], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            L.marker([currentLat, currentLng]).addTo(map).bindPopup('📍 You are here');
+            
+            loadCategory('all');
+        });
         
         // GPS tracking
         if (navigator.geolocation) {
@@ -143,11 +188,132 @@
             }, null, { enableHighAccuracy: true });
         }
         
-        function showToast(message, isSuccess = true) {
+        async function loadCategory(category) {
+            // Update tabs
+            document.querySelectorAll('.category-tab').forEach(t => {
+                t.classList.remove('tab-active');
+                if (t.dataset.cat === category) t.classList.add('tab-active');
+            });
+            
+            const grid = document.getElementById('species-grid');
+            grid.innerHTML = '<div class="glass rounded-xl p-8 col-span-2 text-center"><div class="text-4xl mb-2 animate-pulse">🔍</div><div>Loading...</div></div>';
+            
+            try {
+                const res = await fetch(`/api/species?lat=${currentLat}&lng=${currentLng}&category=${category}`);
+                const data = await res.json();
+                speciesData = data;
+                
+                document.getElementById('location-name').textContent = `📍 ${data.location?.display || 'Unknown'}`;
+                
+                let allItems = [];
+                for (const [cat, items] of Object.entries(data.categories || {})) {
+                    items.forEach(item => {
+                        item._category = cat;
+                        allItems.push(item);
+                    });
+                }
+                
+                document.getElementById('species-count').textContent = `${allItems.length} species in range`;
+                document.getElementById('grid-count').textContent = `${allItems.length} items`;
+                
+                if (allItems.length === 0) {
+                    grid.innerHTML = '<div class="glass rounded-xl p-8 col-span-2 text-center"><div class="text-4xl mb-2">🌍</div><div>No species data found. Try a different category!</div></div>';
+                    return;
+                }
+                
+                // Sort by rarity
+                const rarityOrder = {legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4};
+                allItems.sort((a, b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+                
+                grid.innerHTML = allItems.map(item => {
+                    const isFound = foundItems.includes(item.name);
+                    const points = item.points || (item.multiplier ? item.multiplier * 10 : 10);
+                    return `
+                        <div class="glass rounded-xl overflow-hidden species-card rarity-${item.rarity || 'common'} ${isFound ? 'found' : ''}" 
+                             onclick="showSpecies(${JSON.stringify(item).replace(/"/g, '&quot;')})" data-name="${item.name}">
+                            ${item.photo ? `<img src="${item.photo}" class="w-full h-28 object-cover" onerror="this.parentElement.querySelector('.fallback-icon').classList.remove('hidden'); this.classList.add('hidden');">` : ''}
+                            <div class="fallback-icon ${item.photo ? 'hidden' : ''} w-full h-28 bg-white/5 flex items-center justify-center text-4xl">
+                                ${getCategoryEmoji(item._category || item.iconic)}
+                            </div>
+                            <div class="p-3">
+                                <div class="font-semibold text-sm truncate">${item.name}</div>
+                                <div class="flex justify-between items-center mt-1">
+                                    <span class="text-xs text-gray-400 capitalize">${item.rarity || 'common'}</span>
+                                    <span class="text-xs font-bold text-emerald-400">+${points}</span>
+                                </div>
+                                ${isFound ? '<div class="text-emerald-400 text-xs mt-1">✓ Found!</div>' : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (e) {
+                console.error(e);
+                grid.innerHTML = '<div class="glass rounded-xl p-8 col-span-2 text-center text-red-400">Error loading data</div>';
+            }
+        }
+        
+        function getCategoryEmoji(cat) {
+            const emojis = {
+                plants: '🌿', Plantae: '🌿', fungi: '🍄', Fungi: '🍄',
+                birds: '🐦', Aves: '🐦', mammals: '🦊', Mammalia: '🦊',
+                reptiles: '🦎', Reptilia: '🦎', amphibians: '🐸', Amphibia: '🐸',
+                insects: '🦋', Insecta: '🦋', fish: '🐟', Actinopterygii: '🐟',
+                minerals: '💎', fossils: '🦴', artifacts: '🏺', rocks: '🪨'
+            };
+            return emojis[cat] || '🔍';
+        }
+        
+        function showSpecies(item) {
+            const modal = document.getElementById('species-modal');
+            const detail = document.getElementById('species-detail');
+            const points = item.points || (item.multiplier ? item.multiplier * 10 : 10);
+            
+            detail.innerHTML = `
+                ${item.photo || item.photo_large ? `<img src="${item.photo_large || item.photo}" class="w-full h-56 object-cover">` : `<div class="w-full h-56 bg-white/5 flex items-center justify-center text-6xl">${getCategoryEmoji(item._category || item.iconic)}</div>`}
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h2 class="text-2xl font-bold">${item.name}</h2>
+                            <div class="text-gray-400 italic">${item.scientific || ''}</div>
+                        </div>
+                        <div class="bg-emerald-600 px-3 py-1 rounded-full font-bold">+${points}</div>
+                    </div>
+                    
+                    <div class="flex gap-2 mb-4">
+                        <span class="px-3 py-1 rounded-full bg-white/10 text-sm capitalize">${item.rarity || 'common'}</span>
+                        <span class="px-3 py-1 rounded-full bg-white/10 text-sm">${item._category || item.iconic || 'Unknown'}</span>
+                        ${item.threatened ? '<span class="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-sm">Threatened</span>' : ''}
+                    </div>
+                    
+                    ${item.observations ? `<div class="text-sm text-gray-400 mb-4">${item.observations.toLocaleString()} observations recorded</div>` : ''}
+                    ${item.age ? `<div class="text-sm text-gray-400 mb-4">Age: ${item.age}</div>` : ''}
+                    ${item.period ? `<div class="text-sm text-gray-400 mb-4">Period: ${item.period}</div>` : ''}
+                    ${item.depth ? `<div class="text-sm text-gray-400 mb-4">Typical depth: ${item.depth}</div>` : ''}
+                    ${item.description ? `<div class="text-sm text-gray-300 mb-4">${item.description}</div>` : ''}
+                    
+                    <div class="flex gap-3">
+                        <button onclick="closeSpecies(); openCamera();" class="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl font-bold">
+                            📸 Photograph
+                        </button>
+                        ${item.wikipedia ? `<a href="${item.wikipedia}" target="_blank" class="py-3 px-4 bg-white/10 rounded-xl">📚</a>` : ''}
+                    </div>
+                    
+                    <button onclick="closeSpecies()" class="w-full mt-3 py-3 bg-white/5 rounded-xl">Close</button>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+        
+        function closeSpecies() {
+            document.getElementById('species-modal').classList.add('hidden');
+        }
+        
+        function showToast(message, success = true) {
             const toast = document.getElementById('toast');
             const inner = toast.querySelector('div');
             inner.textContent = message;
-            inner.className = `glass rounded-xl p-4 text-center text-lg font-bold ${isSuccess ? 'bg-emerald-600/50' : 'bg-red-600/50'}`;
+            inner.className = `glass rounded-xl p-4 text-center font-bold ${success ? 'bg-emerald-600/30 border border-emerald-500/50' : 'bg-red-600/30 border border-red-500/50'}`;
             toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('hidden'), 3000);
         }
@@ -157,23 +323,20 @@
             const video = document.getElementById('camera-feed');
             
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-                    audio: false 
+                    audio: false
                 });
                 video.srcObject = mediaStream;
                 modal.classList.remove('hidden');
-            } catch (err) {
-                showToast('Camera access needed!', false);
+            } catch (e) {
+                showToast('Camera access required!', false);
             }
         }
         
         function closeCamera() {
-            const modal = document.getElementById('camera-modal');
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-            }
-            modal.classList.add('hidden');
+            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            document.getElementById('camera-modal').classList.add('hidden');
         }
         
         function capturePhoto() {
@@ -184,7 +347,6 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0);
-            
             capturedImage = canvas.toDataURL('image/jpeg', 0.8);
             
             closeCamera();
@@ -203,34 +365,32 @@
             modal.classList.remove('hidden');
             
             try {
-                const response = await fetch('/api/identify', {
+                const res = await fetch('/api/identify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image: capturedImage,
-                        lat: currentLat,
-                        lng: currentLng
-                    })
+                    body: JSON.stringify({ image: capturedImage, lat: currentLat, lng: currentLng })
                 });
-                
-                const data = await response.json();
+                const data = await res.json();
                 loading.classList.add('hidden');
                 
-                if (data.results && data.results.length > 0) {
-                    results.innerHTML = data.results.map(r => `
-                        <div class="glass rounded-xl p-4 cursor-pointer hover:bg-emerald-600/30 transition-all"
-                             onclick="confirmFind('${r.name}', '${r.scientific}', '${r.iconic}', ${r.score})">
-                            <div class="flex gap-3 items-center">
-                                ${r.photo ? `<img src="${r.photo}" class="w-16 h-16 rounded-lg object-cover">` : '<div class="w-16 h-16 bg-white/20 rounded-lg flex items-center justify-center">🔍</div>'}
-                                <div class="flex-1">
-                                    <div class="font-bold">${r.name}</div>
-                                    <div class="text-sm text-emerald-300 italic">${r.scientific}</div>
-                                    <div class="text-xs text-emerald-400">${r.iconic} • ${Math.round(r.score * 100)}% match</div>
+                if (data.results && data.results.length) {
+                    results.innerHTML = `
+                        <div class="text-sm text-gray-400 mb-3">Select the correct identification:</div>
+                        ${data.results.map(r => `
+                            <div class="glass rounded-xl p-4 cursor-pointer hover:bg-emerald-600/20 transition-all"
+                                 onclick="confirmFind('${r.name.replace(/'/g, "\\'")}', '${r.scientific || ''}', '${r.iconic || 'Unknown'}')">
+                                <div class="flex gap-3 items-center">
+                                    ${r.photo ? `<img src="${r.photo}" class="w-14 h-14 rounded-lg object-cover">` : '<div class="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center text-2xl">🔍</div>'}
+                                    <div class="flex-1">
+                                        <div class="font-bold">${r.name}</div>
+                                        <div class="text-sm text-gray-400 italic">${r.scientific || ''}</div>
+                                        <div class="text-xs text-emerald-400">${Math.round(r.score * 100)}% match</div>
+                                    </div>
+                                    <div class="text-xl">→</div>
                                 </div>
-                                <div class="text-2xl">→</div>
                             </div>
-                        </div>
-                    `).join('');
+                        `).join('')}
+                    `;
                     results.classList.remove('hidden');
                 } else {
                     results.innerHTML = `
@@ -242,47 +402,37 @@
                     `;
                     results.classList.remove('hidden');
                 }
-            } catch (err) {
+            } catch (e) {
                 loading.classList.add('hidden');
-                results.innerHTML = '<div class="text-center text-red-400">Error analyzing photo. Try again.</div>';
+                results.innerHTML = '<div class="text-center text-red-400">Error. Try again.</div>';
                 results.classList.remove('hidden');
             }
         }
         
-        async function confirmFind(name, scientific, iconic, score) {
+        async function confirmFind(name, scientific, iconic) {
             closeIdentify();
-            showToast('🔍 Confirming find...', true);
+            showToast('🔍 Confirming...', true);
             
             try {
-                const response = await fetch('/api/confirm_find', {
+                const res = await fetch('/api/confirm_find', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        name: name,
-                        scientific: scientific,
-                        iconic: iconic,
-                        photo: capturedImage,
-                        lat: currentLat,
-                        lng: currentLng,
-                        observations: 1000
+                        name, scientific, category: iconic.toLowerCase(),
+                        rarity: 'uncommon', lat: currentLat, lng: currentLng
                     })
                 });
-                
-                const data = await response.json();
+                const data = await res.json();
                 
                 if (data.success) {
                     showToast(`🎉 ${name}! +${data.points} points!`, true);
-                    
-                    // Mark as found
-                    document.querySelectorAll(`[data-species="${name}"]`).forEach(el => {
-                        el.classList.add('found');
-                    });
-                    
+                    foundItems.push(name);
+                    document.querySelectorAll(`[data-name="${name}"]`).forEach(el => el.classList.add('found'));
                     refreshLeaderboard();
                 } else {
-                    showToast(data.error || 'Error logging find', false);
+                    showToast(data.error || 'Error', false);
                 }
-            } catch (err) {
+            } catch (e) {
                 showToast('Network error', false);
             }
         }
@@ -292,23 +442,23 @@
         }
         
         async function refreshLeaderboard() {
-            const response = await fetch(`/api/leaderboard/${gameCode}`);
-            const players = await response.json();
+            const res = await fetch(`/api/leaderboard/${gameCode}`);
+            const players = await res.json();
             const lb = document.getElementById('leaderboard');
             lb.innerHTML = players.map((p, i) => `
-                <div class="flex items-center gap-2 shrink-0 ${p.name === playerName ? 'bg-emerald-600/40 px-3 py-1 rounded-full' : ''}">
-                    <span class="text-emerald-400">${i + 1}.</span>
-                    <span>${p.name}</span>
-                    <span class="font-bold text-emerald-300">${p.score}</span>
+                <div class="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full ${p.name === playerName ? 'bg-emerald-600/30 border border-emerald-500/50' : 'bg-white/5'}">
+                    <span class="text-sm ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-500'}">${i + 1}</span>
+                    <span class="font-medium">${p.name}</span>
+                    <span class="font-bold text-emerald-400">${p.score}</span>
                 </div>
             `).join('');
         }
         
         function shareGame() {
-            const url = window.location.origin + '/join';
             const text = `Join my NatureHunt! Code: ${gameCode}`;
+            const url = window.location.origin + '/join';
             if (navigator.share) {
-                navigator.share({ title: 'NatureHunt', text: text, url: url });
+                navigator.share({ title: 'NatureHunt', text, url });
             } else {
                 navigator.clipboard.writeText(`${text} - ${url}`);
                 showToast('Game code copied!', true);

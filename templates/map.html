@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map - NatureHunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { background: #020617; margin: 0; }
+        #map { height: 100vh; width: 100%; }
+        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="fixed top-4 left-4 right-4 z-[1000]">
+        <div class="glass rounded-xl p-4 text-white">
+            <a href="/" class="text-emerald-400">← Back</a>
+            <h1 class="text-xl font-bold mt-2">🗺️ Discovery Map</h1>
+            <p class="text-gray-300 text-sm">Explore species, fossils, and artifacts in your area</p>
+        </div>
+    </div>
+    
+    <div class="fixed bottom-4 left-4 right-4 z-[1000]">
+        <div class="flex gap-2 overflow-x-auto pb-2">
+            <button onclick="loadMapData('birds')" class="shrink-0 px-4 py-2 glass rounded-full text-white text-sm">🐦 Birds</button>
+            <button onclick="loadMapData('mammals')" class="shrink-0 px-4 py-2 glass rounded-full text-white text-sm">🦊 Mammals</button>
+            <button onclick="loadMapData('fossils')" class="shrink-0 px-4 py-2 glass rounded-full text-white text-sm">🦴 Fossils</button>
+            <button onclick="loadMapData('minerals')" class="shrink-0 px-4 py-2 glass rounded-full text-white text-sm">💎 Minerals</button>
+        </div>
+    </div>
+    
+    <script>
+        const lat = {{ lat }};
+        const lng = {{ lng }};
+        
+        const map = L.map('map').setView([lat, lng], 12);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        
+        L.marker([lat, lng]).addTo(map).bindPopup('📍 You are here').openPopup();
+        
+        async function loadMapData(category) {
+            const res = await fetch(`/api/species?lat=${lat}&lng=${lng}&category=${category}`);
+            const data = await res.json();
+            // Add markers for items with locations
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery - NatureHunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="text-white pb-20">
+    <div class="p-4">
+        <a href="/profile" class="text-emerald-400 mb-4 block">← Profile</a>
+        <h1 class="text-2xl font-bold mb-4">🖼️ Photo Gallery</h1>
+        
+        {% if photos %}
+        <div class="grid grid-cols-2 gap-3">
+            {% for p in photos %}
+            <div class="glass rounded-xl overflow-hidden">
+                {% if p.image_data %}
+                <img src="{{ p.image_data }}" class="w-full h-32 object-cover">
+                {% else %}
+                <div class="w-full h-32 bg-white/5 flex items-center justify-center text-4xl">📸</div>
+                {% endif %}
+                <div class="p-2">
+                    <div class="font-medium text-sm truncate">{{ p.item_name }}</div>
+                    <div class="text-purple-400 text-xs">📸 {{ p.style_score }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="glass rounded-xl p-8 text-center">
+            <div class="text-6xl mb-4">📷</div>
+            <p class="text-gray-400">No photos yet! Start hunting to build your gallery.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

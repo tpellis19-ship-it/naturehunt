@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - NatureHunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="text-white pb-20">
+    <div class="p-4">
+        <a href="/" class="text-emerald-400 mb-4 block">← Back</a>
+        
+        <div class="glass rounded-2xl p-6 text-center mb-6">
+            <div class="text-6xl mb-2">👤</div>
+            <h1 class="text-2xl font-bold">{{ user_name }}</h1>
+            <p class="text-gray-400 text-sm">{{ user_email }}</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-3xl font-bold text-emerald-400">{{ total_points }}</div>
+                <div class="text-xs text-gray-400">Total Points</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-3xl font-bold text-cyan-400">{{ find_count }}</div>
+                <div class="text-xs text-gray-400">Finds</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-3xl font-bold text-purple-400">{{ photo_count }}</div>
+                <div class="text-xs text-gray-400">Photos</div>
+            </div>
+            <div class="glass rounded-xl p-4 text-center">
+                <div class="text-3xl font-bold text-amber-400">{{ total_style }}</div>
+                <div class="text-xs text-gray-400">Style Score</div>
+            </div>
+        </div>
+        
+        <a href="/gallery" class="glass rounded-xl p-4 flex items-center justify-between mb-4">
+            <span class="font-bold">🖼️ Photo Gallery</span>
+            <span class="text-gray-400">→</span>
+        </a>
+        
+        <h2 class="font-bold mb-3">Recent Finds</h2>
+        <div class="space-y-2">
+            {% for f in finds[:10] %}
+            <div class="glass rounded-xl p-3 flex justify-between items-center">
+                <div>
+                    <div class="font-medium">{{ f.item_name }}</div>
+                    <div class="text-xs text-gray-400">{{ f.category }}</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-emerald-400 font-bold">+{{ f.points }}</div>
+                    <div class="text-xs text-purple-400">📸 {{ f.style_score or 0 }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

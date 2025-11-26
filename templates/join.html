@@ -18,17 +18,13 @@
                 <div class="text-6xl mb-2">🎮</div>
                 <h1 class="text-3xl font-bold">Join Hunt</h1>
             </div>
-            {% if error %}<div class="bg-red-500/20 rounded-xl p-4 mb-4 text-center">{{ error }}</div>{% endif %}
-            <form method="POST" class="space-y-6">
+            {% if error %}<div class="bg-red-500/20 rounded-xl p-4 mb-4 text-center text-red-400">{{ error }}</div>{% endif %}
+            <form method="POST" class="space-y-4">
                 <input type="hidden" name="lat" id="lat">
                 <input type="hidden" name="lng" id="lng">
                 <div>
                     <label class="block text-gray-300 mb-2 text-sm">Game Code</label>
-                    <input type="text" name="code" required maxlength="4" class="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-center text-4xl tracking-[0.5em] uppercase font-mono" placeholder="XXXX">
-                </div>
-                <div>
-                    <label class="block text-gray-300 mb-2 text-sm">Your Name</label>
-                    <input type="text" name="name" required class="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-xl" placeholder="Enter name">
+                    <input type="text" name="code" required maxlength="4" class="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 text-center text-4xl tracking-[0.5em] uppercase font-mono" placeholder="XXXX">
                 </div>
                 <button type="submit" class="w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl font-bold text-xl">🎯 Join</button>
             </form>
@@ -38,6 +34,9 @@
         navigator.geolocation?.getCurrentPosition(p => {
             document.getElementById('lat').value = p.coords.latitude;
             document.getElementById('lng').value = p.coords.longitude;
+        }, () => {
+            document.getElementById('lat').value = 35.4676;
+            document.getElementById('lng').value = -97.5164;
         });
     </script>
 </body>

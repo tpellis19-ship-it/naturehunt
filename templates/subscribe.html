@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscribe - NatureHunt</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="text-white">
+    <div class="min-h-screen flex flex-col items-center justify-center p-6">
+        <div class="glass rounded-3xl p-8 w-full max-w-md text-center">
+            <div class="text-6xl mb-4">🎯</div>
+            <h1 class="text-3xl font-bold mb-2">Start Hunting!</h1>
+            <p class="text-gray-400 mb-6">Unlimited access for just $1/month</p>
+            
+            <div class="glass rounded-xl p-4 mb-6 text-left space-y-2">
+                <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Unlimited hunts</div>
+                <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> AI photo identification</div>
+                <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Photo gallery & history</div>
+                <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Style points & rankings</div>
+                <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Cancel anytime</div>
+            </div>
+            
+            <button onclick="subscribe()" id="sub-btn" class="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl font-bold text-lg">
+                Subscribe - $1/month
+            </button>
+            
+            <p class="text-gray-500 text-xs mt-4">Secure payment via Stripe</p>
+        </div>
+    </div>
+    <script>
+        async function subscribe() {
+            document.getElementById('sub-btn').textContent = 'Loading...';
+            const r = await fetch('/create-checkout-session', {method: 'POST'});
+            const data = await r.json();
+            if (data.url) window.location = data.url;
+            else alert(data.error || 'Error');
+        }
+    </script>
+</body>
+</html>

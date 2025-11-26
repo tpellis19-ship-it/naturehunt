@@ -19,15 +19,10 @@
                 <h1 class="text-3xl font-bold">Host Hunt</h1>
                 <p id="status" class="text-gray-400 mt-2">Getting location...</p>
             </div>
-            {% if error %}<div class="bg-red-500/20 rounded-xl p-4 mb-4 text-center">{{ error }}</div>{% endif %}
-            <form method="POST" class="space-y-6">
+            <form method="POST">
                 <input type="hidden" name="lat" id="lat">
                 <input type="hidden" name="lng" id="lng">
-                <div>
-                    <label class="block text-gray-300 mb-2 text-sm">Your Name</label>
-                    <input type="text" name="name" required class="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 focus:border-emerald-500 focus:outline-none text-xl" placeholder="Enter name">
-                </div>
-                <button type="submit" id="btn" disabled class="w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-600 disabled:from-gray-600 disabled:to-gray-700 rounded-xl font-bold text-xl">🚀 Start</button>
+                <button type="submit" id="btn" disabled class="w-full py-5 bg-gradient-to-r from-emerald-600 to-teal-600 disabled:from-gray-600 disabled:to-gray-700 rounded-xl font-bold text-xl">🚀 Start Hunt</button>
             </form>
         </div>
     </div>
@@ -39,9 +34,11 @@
             document.getElementById('status').className = 'text-emerald-400 mt-2';
             document.getElementById('btn').disabled = false;
         }, () => {
-            document.getElementById('status').textContent = '⚠️ Enable location';
-            document.getElementById('status').className = 'text-amber-400 mt-2';
-        }, {enableHighAccuracy: true});
+            document.getElementById('lat').value = 35.4676;
+            document.getElementById('lng').value = -97.5164;
+            document.getElementById('status').textContent = '📍 Using default location';
+            document.getElementById('btn').disabled = false;
+        });
     </script>
 </body>
 </html>

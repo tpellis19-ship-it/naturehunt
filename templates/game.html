@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hunt - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,36 +17,61 @@
     </style>
 </head>
 <body class="text-white">
+    <!-- Toast -->
     <div id="toast" class="fixed top-4 left-4 right-4 z-[200] hidden">
         <div class="glass rounded-xl p-4 text-center font-bold"></div>
     </div>
     
+    <!-- Camera Modal -->
     <div id="camera-modal" class="fixed inset-0 bg-black z-50 hidden">
         <video id="camera" class="w-full h-full object-cover" autoplay playsinline></video>
         <canvas id="canvas" class="hidden"></canvas>
-        <div class="absolute top-4 left-4"><button onclick="closeCamera()" class="glass rounded-full w-12 h-12 text-2xl">✕</button></div>
-        <div class="absolute bottom-20 left-0 right-0 flex justify-center" style="padding-bottom: env(safe-area-inset-bottom);">
-            <button onclick="snap()" class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl">
-                <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full"></div>
+        <div class="absolute top-4 left-4">
+            <button onclick="closeCamera()" class="glass rounded-full w-12 h-12 text-2xl">✕</button>
+        </div>
+        <div class="absolute bottom-24 left-0 right-0 flex justify-center">
+            <button onclick="snap()" class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl">
+                <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full"></div>
             </button>
+        </div>
+        <div class="absolute bottom-8 left-0 right-0 text-center text-sm text-gray-400">
+            Tap to capture • Get close & centered
         </div>
     </div>
     
+    <!-- ID Results Modal - IMPROVED -->
     <div id="id-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto">
-        <div class="p-4" style="padding-bottom: 100px;">
-            <div class="glass rounded-2xl p-4 max-w-md mx-auto">
-                <div class="flex justify-between mb-3">
-                    <span class="font-bold" id="style-label">📸 Analyzing...</span>
-                    <button onclick="closeId()" class="text-2xl">✕</button>
+        <div class="p-4 pb-32">
+            <div class="glass rounded-2xl overflow-hidden max-w-lg mx-auto">
+                <!-- Your Photo -->
+                <div class="p-4 border-b border-white/10">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-lg" id="style-label">📸 Analyzing...</span>
+                        <button onclick="closeId()" class="text-2xl">✕</button>
+                    </div>
+                    <div class="text-sm text-gray-400 mb-2">YOUR PHOTO</div>
+                    <img id="preview" class="w-full h-48 object-cover rounded-xl">
+                    <div id="photo-score" class="text-center text-purple-400 mt-2 text-sm"></div>
                 </div>
-                <img id="preview" class="w-full h-48 object-cover rounded-xl mb-2">
-                <div id="photo-score" class="text-center text-purple-400 mb-4"></div>
-                <div id="id-loading" class="text-center py-4"><div class="text-3xl animate-pulse">🔍</div></div>
-                <div id="id-results" class="hidden space-y-2"></div>
+                
+                <!-- Loading -->
+                <div id="id-loading" class="p-8 text-center">
+                    <div class="text-4xl animate-pulse mb-2">🔍</div>
+                    <div class="text-gray-400">Identifying specimen...</div>
+                </div>
+                
+                <!-- Results -->
+                <div id="id-results" class="hidden">
+                    <div class="p-3 bg-white/5 text-sm text-gray-400">
+                        POSSIBLE MATCHES - Compare with your photo
+                    </div>
+                    <div id="results-list" class="divide-y divide-white/10"></div>
+                </div>
             </div>
         </div>
     </div>
     
+    <!-- Header -->
     <div class="glass sticky top-0 z-40 p-3">
         <div class="flex items-center justify-between mb-2">
             <div class="font-bold">📍 {{ game.biome }}</div>
@@ -61,87 +86,134 @@
         </div>
     </div>
     
-    <div class="sticky top-[88px] z-30 bg-slate-950/80 px-3 py-2">
+    <!-- Category Tabs -->
+    <div class="sticky top-[88px] z-30 bg-slate-950/90 px-3 py-2">
         <div class="flex overflow-x-auto gap-2" id="tabs">
-            <button onclick="load('all')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-emerald-600/30" data-c="all">🌍</button>
-            <button onclick="load('minerals')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="minerals">💎</button>
-            <button onclick="load('rocks')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="rocks">🪨</button>
-            <button onclick="load('fossils')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="fossils">🦴</button>
-            <button onclick="load('plants')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="plants">🌿</button>
-            <button onclick="load('birds')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="birds">🐦</button>
+            <button onclick="load('all')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-emerald-600/30" data-c="all">🌍 All</button>
+            <button onclick="load('minerals')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="minerals">💎 Minerals</button>
+            <button onclick="load('plants')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="plants">🌿 Plants</button>
+            <button onclick="load('birds')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="birds">🐦 Birds</button>
+            <button onclick="load('fungi')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-c="fungi">🍄 Fungi</button>
         </div>
     </div>
     
-    <div class="p-3" style="padding-bottom: 140px;"><div id="grid" class="grid grid-cols-2 gap-2"></div></div>
-    
-    <div class="fixed z-40" style="bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);">
-        <button onclick="openCam()" class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl text-4xl">📸</button>
+    <!-- Grid -->
+    <div class="p-3 pb-36">
+        <div id="grid" class="grid grid-cols-2 gap-2"></div>
     </div>
     
-    <div class="fixed bottom-0 left-0 right-0 glass z-30" style="padding-bottom: env(safe-area-inset-bottom);">
+    <!-- Camera FAB -->
+    <div class="fixed z-40" style="bottom: 100px; left: 50%; transform: translateX(-50%);">
+        <button onclick="openCam()" class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl text-4xl">
+            📸
+        </button>
+    </div>
+    
+    <!-- Bottom Nav -->
+    <div class="fixed bottom-0 left-0 right-0 glass z-30">
         <div class="flex p-2 gap-2">
-            <a href="/" class="flex-1 py-2.5 bg-white/5 rounded-xl text-center text-xl">🏠</a>
-            <a href="/reference" class="flex-1 py-2.5 bg-white/5 rounded-xl text-center text-xl">📚</a>
-            <a href="/profile" class="flex-1 py-2.5 bg-white/5 rounded-xl text-center text-xl">👤</a>
+            <a href="/" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-xl">🏠</a>
+            <a href="/reference" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-xl">📚</a>
+            <a href="/profile" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-xl">👤</a>
         </div>
     </div>
     
     <script>
-        const code = "{{ game.code }}", userName = "{{ user_name }}";
+        const code = "{{ game.code }}";
+        const userName = "{{ user_name }}";
         const found = new Set({{ found_items | tojson }});
-        let lat = {{ lat }}, lng = {{ lng }}, stream, snapData, photoScore = 50;
+        let lat = {{ lat }}, lng = {{ lng }};
+        let stream, snapData, photoScore = 50;
         
-        navigator.geolocation?.watchPosition(p => { lat = p.coords.latitude; lng = p.coords.longitude; });
+        navigator.geolocation?.watchPosition(p => {
+            lat = p.coords.latitude;
+            lng = p.coords.longitude;
+        });
         
         async function load(cat) {
-            document.querySelectorAll('[data-c]').forEach(b => b.className = `shrink-0 px-3 py-1.5 rounded-full text-sm ${b.dataset.c === cat ? 'bg-emerald-600/30' : 'bg-white/10'}`);
+            document.querySelectorAll('[data-c]').forEach(b => {
+                b.className = `shrink-0 px-3 py-1.5 rounded-full text-sm ${b.dataset.c === cat ? 'bg-emerald-600/30' : 'bg-white/10'}`;
+            });
+            
             const grid = document.getElementById('grid');
             grid.innerHTML = '<div class="col-span-2 text-center py-8"><div class="text-4xl animate-pulse">🔍</div></div>';
             
             const r = await fetch(`/api/species?lat=${lat}&lng=${lng}&category=${cat}`);
             const data = await r.json();
+            
             let items = [];
-            for (const [c, list] of Object.entries(data.categories || {})) list.forEach(i => { i._cat = c; items.push(i); });
+            for (const [c, list] of Object.entries(data.categories || {})) {
+                list.forEach(i => { i._cat = c; items.push(i); });
+            }
             
             const order = {legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4};
             items.sort((a,b) => (order[a.rarity]||5) - (order[b.rarity]||5));
             
             grid.innerHTML = items.map(i => {
                 const f = found.has(i.name);
-                const em = {minerals:'💎',rocks:'🪨',fossils:'🦴',plants:'🌿',birds:'🐦',mammals:'🦊',tracks:'🐾'}[i._cat] || '🔍';
-                return `<div class="glass rounded-xl overflow-hidden rarity-${i.rarity||'common'} ${f?'found':''}" onclick='showItem(${JSON.stringify(i).replace(/'/g,"&#39;")})'>
-                    ${i.photo ? `<img src="${i.photo}" class="w-full h-24 object-cover" loading="lazy" onerror="this.src='https://via.placeholder.com/200?text=${em}'">` : `<div class="h-24 bg-white/5 flex items-center justify-center text-3xl">${em}</div>`}
-                    <div class="p-2"><div class="font-medium text-sm truncate">${i.name}</div><div class="flex justify-between mt-1"><span class="text-xs text-gray-400 capitalize">${i.rarity||'common'}</span><span class="text-xs text-emerald-400">+${i.points}</span></div>${f?'<div class="text-emerald-400 text-xs">✓</div>':''}</div>
+                const em = {minerals:'💎',rocks:'🪨',fossils:'🦴',plants:'🌿',birds:'🐦',mammals:'🦊',fungi:'🍄'}[i._cat] || '🔍';
+                return `
+                <div class="glass rounded-xl overflow-hidden rarity-${i.rarity||'common'} ${f?'found':''}" onclick='showItem(${JSON.stringify(i).replace(/'/g,"&#39;")})'>
+                    ${i.photo ? `<img src="${i.photo}" class="w-full h-24 object-cover" loading="lazy" onerror="this.parentElement.querySelector('.fallback').classList.remove('hidden');this.remove();">` : ''}
+                    <div class="fallback h-24 bg-white/5 items-center justify-center text-3xl ${i.photo ? 'hidden' : 'flex'}">${em}</div>
+                    <div class="p-2">
+                        <div class="font-medium text-sm truncate">${i.name}</div>
+                        <div class="flex justify-between mt-1">
+                            <span class="text-xs text-gray-400 capitalize">${i.rarity||'common'}</span>
+                            <span class="text-xs text-emerald-400">+${i.points}</span>
+                        </div>
+                        ${f ? '<div class="text-emerald-400 text-xs mt-1">✓ Found</div>' : ''}
+                    </div>
                 </div>`;
             }).join('');
         }
         
         function showItem(i) {
-            const em = {minerals:'💎',rocks:'🪨',fossils:'🦴'}[i._cat] || '🔍';
+            const em = {minerals:'💎',plants:'🌿',birds:'🐦',fungi:'🍄'}[i._cat] || '🔍';
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black/95 z-50 overflow-y-auto p-4';
-            modal.innerHTML = `<div class="glass rounded-2xl max-w-md mx-auto overflow-hidden">
-                ${i.photo ? `<img src="${i.photo}" class="w-full h-52 object-cover">` : `<div class="h-52 bg-white/5 flex items-center justify-center text-6xl">${em}</div>`}
-                <div class="p-4">
-                    <div class="flex justify-between mb-2"><div><h2 class="text-xl font-bold">${i.name}</h2><div class="text-gray-400 text-sm">${i.scientific||i.type||''}</div></div><div class="bg-emerald-600 px-3 py-1 rounded-full h-fit">+${i.points}</div></div>
-                    <p class="text-gray-300 text-sm mb-4">${i.description||''}</p>
-                    <div class="flex gap-2 mb-4"><span class="px-2 py-1 rounded bg-white/10 text-xs capitalize">${i.rarity||'common'}</span>${i.hardness?`<span class="px-2 py-1 rounded bg-white/10 text-xs">H:${i.hardness}</span>`:''}</div>
-                    <div class="flex gap-2">
-                        <button onclick="quickLog('${i.name.replace(/'/g,"\\'")}','${i._cat}',${i.points});this.closest('.fixed').remove();" class="flex-1 py-3 bg-emerald-600 rounded-xl font-bold">✓ LOG</button>
-                        <button onclick="this.closest('.fixed').remove();openCam();" class="py-3 px-4 bg-white/10 rounded-xl">📸</button>
+            modal.innerHTML = `
+                <div class="glass rounded-2xl max-w-md mx-auto overflow-hidden">
+                    ${i.photo ? `<img src="${i.photo}" class="w-full h-52 object-cover">` : `<div class="h-52 bg-white/5 flex items-center justify-center text-6xl">${em}</div>`}
+                    <div class="p-4">
+                        <div class="flex justify-between mb-3">
+                            <div>
+                                <h2 class="text-xl font-bold">${i.name}</h2>
+                                ${i.scientific ? `<div class="text-gray-400 text-sm italic">${i.scientific}</div>` : ''}
+                            </div>
+                            <div class="bg-emerald-600 px-3 py-1 rounded-full h-fit">+${i.points}</div>
+                        </div>
+                        ${i.description ? `<p class="text-gray-300 text-sm mb-4">${i.description}</p>` : ''}
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 rounded bg-white/10 text-xs capitalize">${i.rarity||'common'}</span>
+                            ${i.hardness ? `<span class="px-2 py-1 rounded bg-white/10 text-xs">Hardness: ${i.hardness}</span>` : ''}
+                            ${i.colors ? `<span class="px-2 py-1 rounded bg-white/10 text-xs">${i.colors.slice(0,3).join(', ')}</span>` : ''}
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="quickLog('${i.name.replace(/'/g,"\\'")}','${i._cat}',${i.points});this.closest('.fixed').remove();" class="flex-1 py-3 bg-emerald-600 rounded-xl font-bold">✓ LOG FIND</button>
+                            <button onclick="this.closest('.fixed').remove();openCam();" class="py-3 px-4 bg-white/10 rounded-xl">📸</button>
+                        </div>
+                        <button onclick="this.closest('.fixed').remove();" class="w-full mt-2 py-2 bg-white/5 rounded-xl text-sm">Close</button>
                     </div>
-                    <button onclick="this.closest('.fixed').remove();" class="w-full mt-2 py-2 bg-white/5 rounded-xl text-sm">Close</button>
-                </div>
-            </div>`;
+                </div>`;
             document.body.appendChild(modal);
         }
         
         async function quickLog(name, cat, pts) {
             toast('Logging...');
-            const r = await fetch('/api/quick_log', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, category: cat, points: pts})});
+            const r = await fetch('/api/quick_log', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, category: cat, points: pts})
+            });
             const d = await r.json();
-            if (d.success) { toast(`🎉 +${d.points}!`, true); found.add(name); refreshLb(); }
-            else toast(d.error, false);
+            if (d.success) {
+                toast(`🎉 +${d.points} points!`, true);
+                found.add(name);
+                refreshLb();
+            } else {
+                toast(d.error, false);
+            }
         }
         
         function toast(msg, ok=true) {
@@ -157,16 +229,23 @@
                 stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}, audio: false});
                 document.getElementById('camera').srcObject = stream;
                 document.getElementById('camera-modal').classList.remove('hidden');
-            } catch(e) { toast('Camera needed!', false); }
+            } catch(e) {
+                toast('Camera access needed!', false);
+            }
         }
         
-        function closeCamera() { if (stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('camera-modal').classList.add('hidden'); }
+        function closeCamera() {
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            document.getElementById('camera-modal').classList.add('hidden');
+        }
         
         function snap() {
-            const v = document.getElementById('camera'), c = document.getElementById('canvas');
-            c.width = v.videoWidth; c.height = v.videoHeight;
+            const v = document.getElementById('camera');
+            const c = document.getElementById('canvas');
+            c.width = v.videoWidth;
+            c.height = v.videoHeight;
             c.getContext('2d').drawImage(v, 0, 0);
-            snapData = c.toDataURL('image/jpeg', 0.7);
+            snapData = c.toDataURL('image/jpeg', 0.8);
             closeCamera();
             identify();
         }
@@ -180,44 +259,83 @@
             document.getElementById('photo-score').textContent = '';
             modal.classList.remove('hidden');
             
-            const r = await fetch('/api/identify', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({image: snapData, lat, lng})});
+            const r = await fetch('/api/identify', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image: snapData, lat, lng})
+            });
             const d = await r.json();
             
             photoScore = d.photo_score || 50;
             document.getElementById('style-label').textContent = d.style_label || '📸 Photo';
-            document.getElementById('photo-score').textContent = `Style Score: ${photoScore}/100 (${d.style_bonus || 1}x bonus)`;
+            document.getElementById('photo-score').textContent = `Style Score: ${photoScore}/100 • ${d.style_multiplier || 1}x bonus`;
             document.getElementById('id-loading').classList.add('hidden');
             
-            const results = document.getElementById('id-results');
-            results.innerHTML = (d.results || []).map(r => `
-                <div class="glass rounded-xl p-3" onclick="confirmFind('${r.name.replace(/'/g,"\\'")}','${r.category}',${r.points})">
-                    <div class="flex gap-3 items-center">
-                        ${r.photo ? `<img src="${r.photo}" class="w-14 h-14 rounded-lg object-cover">` : '<div class="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center">🔍</div>'}
-                        <div class="flex-1"><div class="font-bold">${r.name}</div><div class="text-xs text-gray-400">${Math.round(r.score*100)}% • ${r.confidence}</div></div>
-                        <div class="text-emerald-400 font-bold">+${r.points}</div>
+            const list = document.getElementById('results-list');
+            list.innerHTML = (d.results || []).map(r => `
+                <div class="p-3 hover:bg-white/5 cursor-pointer" onclick="confirmFind('${r.name.replace(/'/g,"\\'")}','${r.category}',${r.points})">
+                    <div class="flex gap-3">
+                        <div class="shrink-0">
+                            ${r.photo ? `<img src="${r.photo}" class="w-20 h-20 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/80?text=?'">` : '<div class="w-20 h-20 bg-white/10 rounded-lg flex items-center justify-center text-2xl">?</div>'}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <div class="font-bold truncate">${r.name}</div>
+                                <div class="text-emerald-400 font-bold shrink-0 ml-2">+${r.points}</div>
+                            </div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <div class="text-sm ${r.confidence > 70 ? 'text-emerald-400' : r.confidence > 40 ? 'text-yellow-400' : 'text-gray-400'}">
+                                    ${r.confidence}% match
+                                </div>
+                                <div class="text-xs text-gray-500">${r.source || ''}</div>
+                            </div>
+                            ${r.description ? `<div class="text-xs text-gray-400 mt-1 line-clamp-2">${r.description}</div>` : ''}
+                            ${r.colors ? `<div class="text-xs text-gray-500 mt-1">Colors: ${r.colors.slice(0,3).join(', ')}</div>` : ''}
+                        </div>
                     </div>
                 </div>
             `).join('');
-            results.classList.remove('hidden');
+            
+            document.getElementById('id-results').classList.remove('hidden');
         }
         
         async function confirmFind(name, cat, pts) {
             closeId();
-            toast('Confirming...');
-            const r = await fetch('/api/confirm_find', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name, category: cat, points: pts, photo_score: photoScore, image: snapData, lat, lng})});
+            toast('Confirming find...');
+            const r = await fetch('/api/confirm_find', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    name, category: cat, points: pts,
+                    photo_score: photoScore, image: snapData,
+                    lat, lng
+                })
+            });
             const d = await r.json();
-            if (d.success) { toast(`🎉 ${name}! +${d.points}!`, true); found.add(name); refreshLb(); }
-            else toast(d.error, false);
+            if (d.success) {
+                toast(`🎉 ${name}! +${d.points} points!`, true);
+                found.add(name);
+                refreshLb();
+            } else {
+                toast(d.error, false);
+            }
         }
         
-        function closeId() { document.getElementById('id-modal').classList.add('hidden'); }
+        function closeId() {
+            document.getElementById('id-modal').classList.add('hidden');
+        }
         
         async function refreshLb() {
             const r = await fetch(`/api/leaderboard/${code}`);
             const players = await r.json();
-            document.getElementById('lb').innerHTML = players.map((p,i) => `<div class="shrink-0 px-3 py-1 rounded-full text-sm ${p.name === userName ? 'bg-emerald-600/40' : 'bg-white/10'}">${i+1}. ${p.name} <span class="text-emerald-400">${p.score}</span></div>`).join('');
+            document.getElementById('lb').innerHTML = players.map((p,i) => `
+                <div class="shrink-0 px-3 py-1 rounded-full text-sm ${p.name === userName ? 'bg-emerald-600/40' : 'bg-white/10'}">
+                    ${i+1}. ${p.name} <span class="text-emerald-400">${p.score}</span>
+                </div>
+            `).join('');
         }
         
+        // Initial load
         load('all');
         setInterval(refreshLb, 5000);
     </script>

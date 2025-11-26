@@ -10,43 +10,42 @@
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="text-white">
-    <div class="p-6">
-        <a href="/" class="text-emerald-400 mb-4 block text-lg">← Back</a>
-        
-        <div class="flex items-end justify-between mb-6">
+<body class="text-white pb-20">
+    <div class="p-4">
+        <a href="/" class="text-emerald-400 mb-4 block">← Back</a>
+        <div class="flex justify-between items-end mb-6">
             <div>
-                <h1 class="text-4xl font-black">🏆 Collection</h1>
-                <p class="text-gray-400">{{ finds|length }} discoveries</p>
+                <h1 class="text-3xl font-black">🏆 Collection</h1>
+                <p class="text-gray-400">{{ finds|length }} finds</p>
             </div>
             <div class="text-right">
-                <div class="text-4xl font-bold text-emerald-400">{{ total }}</div>
+                <div class="text-3xl font-bold text-emerald-400">{{ total }}</div>
                 <div class="text-gray-400 text-sm">points</div>
             </div>
         </div>
         
         {% if finds %}
         {% for cat, items in by_category.items() %}
-        <div class="mb-6">
-            <h2 class="text-lg font-bold mb-3">{{ categories.get(cat, {}).get('emoji', '📦') }} {{ cat|capitalize }} ({{ items|length }})</h2>
+        <div class="mb-4">
+            <h2 class="font-bold mb-2">{{ categories.get(cat, {}).get('emoji', '📦') }} {{ cat|capitalize }} ({{ items|length }})</h2>
             <div class="space-y-2">
-                {% for find in items %}
-                <div class="glass rounded-xl p-4 flex justify-between items-center">
+                {% for f in items %}
+                <div class="glass rounded-xl p-3 flex justify-between items-center">
                     <div>
-                        <div class="font-bold">{{ find.item_name }}</div>
-                        <div class="text-emerald-400 text-sm">+{{ find.points }} pts</div>
+                        <div class="font-medium">{{ f.item_name }}</div>
+                        <div class="text-emerald-400 text-sm">+{{ f.points }}</div>
                     </div>
-                    <div class="text-3xl text-emerald-400">✓</div>
+                    <div class="text-2xl text-emerald-400">✓</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
         {% endfor %}
         {% else %}
-        <div class="glass rounded-xl p-12 text-center">
-            <div class="text-7xl mb-4">📸</div>
-            <div class="text-2xl font-bold mb-2">No discoveries yet!</div>
-            <a href="/" class="inline-block mt-4 px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl font-bold text-lg">Start Exploring</a>
+        <div class="glass rounded-xl p-8 text-center">
+            <div class="text-6xl mb-4">📸</div>
+            <div class="text-xl font-bold mb-2">No finds yet!</div>
+            <a href="/" class="inline-block mt-4 px-6 py-3 bg-emerald-600 rounded-xl font-bold">Start Hunting</a>
         </div>
         {% endif %}
     </div>

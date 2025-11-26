@@ -5,76 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NatureHunt 🌍</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%); min-height: 100vh; }
         .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-        .glow-green { box-shadow: 0 0 60px rgba(16, 185, 129, 0.4), 0 0 120px rgba(16, 185, 129, 0.2); }
-        .gradient-text { background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .card-hover:hover { transform: translateY(-4px) scale(1.02); }
-        .card-hover:active { transform: scale(0.98); }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .glow { box-shadow: 0 0 60px rgba(16, 185, 129, 0.4); }
     </style>
 </head>
-<body class="text-white" style="padding-bottom: env(safe-area-inset-bottom, 20px);">
-    <div class="min-h-screen flex flex-col">
-        <div class="flex-1 flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-float"></div>
-                <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
-            </div>
+<body class="text-white" style="padding-bottom: env(safe-area-inset-bottom);">
+    <div class="min-h-screen flex flex-col items-center justify-center p-6">
+        <div class="text-8xl mb-4">🌍</div>
+        <h1 class="text-5xl font-black mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">NatureHunt</h1>
+        <p class="text-gray-400 mb-8">Find • Photograph • Score</p>
+        
+        <div class="flex flex-col gap-4 w-full max-w-sm">
+            <a href="/host" class="glass glow rounded-2xl p-6 text-center">
+                <div class="text-4xl mb-2">📸</div>
+                <div class="text-2xl font-bold">Host Hunt</div>
+                <div class="text-emerald-400 text-sm">Start a game</div>
+            </a>
             
-            <div class="relative z-10 text-center mb-8">
-                <div class="text-8xl mb-6 animate-float">🌍</div>
-                <h1 class="text-5xl font-black mb-3 gradient-text">NatureHunt</h1>
-                <p class="text-xl text-gray-300 mb-2">AI-Powered Discovery</p>
-                <p class="text-sm text-gray-500">Plants • Animals • Minerals • Fossils • Artifacts</p>
-            </div>
+            <a href="/join" class="glass rounded-2xl p-6 text-center">
+                <div class="text-4xl mb-2">🎮</div>
+                <div class="text-2xl font-bold">Join Hunt</div>
+                <div class="text-gray-400 text-sm">Enter code</div>
+            </a>
             
-            <div class="flex flex-col gap-4 w-full max-w-sm relative z-10">
-                <a href="/host" class="glass glow-green rounded-2xl p-6 text-center card-hover">
-                    <div class="text-4xl mb-2">📸</div>
-                    <div class="text-2xl font-bold">Host Hunt</div>
-                    <div class="text-emerald-400 text-sm">Create a multiplayer game</div>
+            <div class="grid grid-cols-2 gap-4">
+                <a href="/reference" class="glass rounded-2xl p-5 text-center">
+                    <div class="text-3xl mb-1">📚</div>
+                    <div class="font-bold">Reference</div>
                 </a>
-                
-                <a href="/join" class="glass rounded-2xl p-6 text-center card-hover">
-                    <div class="text-4xl mb-2">🎮</div>
-                    <div class="text-2xl font-bold">Join Hunt</div>
-                    <div class="text-gray-400 text-sm">Enter a game code</div>
+                <a href="/collection" class="glass rounded-2xl p-5 text-center">
+                    <div class="text-3xl mb-1">🏆</div>
+                    <div class="font-bold">Collection</div>
                 </a>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <a href="/explore" class="glass rounded-2xl p-5 text-center card-hover">
-                        <div class="text-3xl mb-1">🔬</div>
-                        <div class="font-bold">Explore</div>
-                    </a>
-                    <a href="/reference" class="glass rounded-2xl p-5 text-center card-hover">
-                        <div class="text-3xl mb-1">📚</div>
-                        <div class="font-bold">Reference</div>
-                    </a>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <a href="/collection" class="glass rounded-2xl p-5 text-center card-hover">
-                        <div class="text-3xl mb-1">🏆</div>
-                        <div class="font-bold">Collection</div>
-                    </a>
-                    <a href="/safety" class="glass rounded-2xl p-5 text-center card-hover border border-amber-500/30">
-                        <div class="text-3xl mb-1">⚠️</div>
-                        <div class="font-bold text-amber-400">Safety</div>
-                    </a>
-                </div>
             </div>
         </div>
         
-        <div class="text-center py-6 text-gray-600 text-xs">
-            <p>⚠️ AI IDs are guides only - verify before eating anything wild</p>
-            <p class="mt-1">Multi-source verification • Anti-cheat protection • v4.0</p>
-        </div>
+        <p class="text-gray-600 text-xs mt-8">⚠️ AI IDs are guides - verify before eating anything</p>
     </div>
 </body>
 </html>

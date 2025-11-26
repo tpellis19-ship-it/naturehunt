@@ -5,445 +5,378 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Hunt - NatureHunt</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: #020617; padding-bottom: env(safe-area-inset-bottom, 0); }
-        .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-        .species-card { transition: all 0.2s; }
-        .species-card:active { transform: scale(0.97); }
-        .found { opacity: 0.4; pointer-events: none; }
-        .rarity-common { border-left: 4px solid #9ca3af; }
-        .rarity-uncommon { border-left: 4px solid #22c55e; }
-        .rarity-rare { border-left: 4px solid #3b82f6; }
-        .rarity-epic { border-left: 4px solid #a855f7; }
-        .rarity-legendary { border-left: 4px solid #f59e0b; animation: legendary-glow 2s infinite; }
-        @keyframes legendary-glow { 0%, 100% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); } 50% { box-shadow: 0 0 25px rgba(245, 158, 11, 0.6); } }
-        .toast { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } }
-        .modal { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } }
-        .tab-active { background: rgba(16, 185, 129, 0.2); border-color: #10b981; }
-        #map { height: 180px; border-radius: 1rem; }
-        .danger-deadly { background: rgba(220, 38, 38, 0.2); border: 2px solid #dc2626; }
-        .danger-dangerous { background: rgba(245, 158, 11, 0.2); border: 2px solid #f59e0b; }
-        .confidence-high { color: #22c55e; }
-        .confidence-moderate { color: #f59e0b; }
-        .confidence-low { color: #ef4444; }
+        * { font-family: 'Inter', -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #020617; }
+        .glass { background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .found { opacity: 0.3; pointer-events: none; }
+        .rarity-common { border-left: 3px solid #9ca3af; }
+        .rarity-uncommon { border-left: 3px solid #22c55e; }
+        .rarity-rare { border-left: 3px solid #3b82f6; }
+        .rarity-epic { border-left: 3px solid #a855f7; }
+        .rarity-legendary { border-left: 3px solid #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+        .toast { animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { transform: translateY(-100%); } }
+        .pulse { animation: pulse 0.3s ease-out; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body class="text-white">
     <!-- Toast -->
-    <div id="toast" class="fixed top-4 left-4 right-4 z-[100] hidden toast">
-        <div class="glass rounded-xl p-4 text-center font-bold"></div>
+    <div id="toast" class="fixed top-4 left-4 right-4 z-[200] hidden toast">
+        <div class="glass rounded-xl p-4 text-center font-bold text-lg"></div>
     </div>
     
-    <!-- Camera Modal - MOVED UP for iPhone -->
-    <div id="camera-modal" class="fixed inset-0 bg-black z-50 hidden modal">
-        <div class="h-full flex flex-col">
-            <div class="p-4 flex justify-between items-center bg-gradient-to-b from-black to-transparent absolute top-0 left-0 right-0 z-10">
-                <button onclick="closeCamera()" class="text-3xl p-2">✕</button>
-                <div class="font-bold text-lg">📸 Photograph Your Find</div>
-                <div class="w-12"></div>
-            </div>
-            <div class="flex-1 relative bg-black">
-                <video id="camera-feed" class="w-full h-full object-cover" autoplay playsinline></video>
-                <canvas id="photo-canvas" class="hidden"></canvas>
-            </div>
-            <!-- CAPTURE BUTTON MOVED MUCH HIGHER -->
-            <div class="absolute bottom-32 left-0 right-0 flex justify-center z-10" style="padding-bottom: env(safe-area-inset-bottom, 20px);">
-                <button onclick="capturePhoto()" class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform">
-                    <div class="w-20 h-20 bg-red-500 rounded-full border-4 border-white"></div>
-                </button>
-            </div>
-            <div class="h-32 bg-gradient-to-t from-black to-transparent"></div>
+    <!-- Quick Camera Modal -->
+    <div id="camera-modal" class="fixed inset-0 bg-black z-50 hidden">
+        <video id="camera" class="w-full h-full object-cover" autoplay playsinline></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        
+        <div class="absolute top-4 left-4 right-4 flex justify-between items-center">
+            <button onclick="closeCamera()" class="glass rounded-full w-12 h-12 text-2xl">✕</button>
+            <div class="glass rounded-full px-4 py-2 font-bold">📸 SNAP IT!</div>
+            <div class="w-12"></div>
+        </div>
+        
+        <div class="absolute bottom-20 left-0 right-0 flex justify-center" style="padding-bottom: env(safe-area-inset-bottom);">
+            <button onclick="snapPhoto()" class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform">
+                <div class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full"></div>
+            </button>
         </div>
     </div>
     
     <!-- Identify Modal -->
-    <div id="identify-modal" class="fixed inset-0 bg-black/95 z-50 hidden modal overflow-y-auto">
-        <div class="min-h-full p-4 pb-32">
-            <div class="glass rounded-3xl p-6 max-w-lg mx-auto">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">🔬 AI Identification</h2>
-                    <button onclick="closeIdentify()" class="text-3xl p-2">✕</button>
+    <div id="identify-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto">
+        <div class="min-h-full p-4" style="padding-bottom: calc(100px + env(safe-area-inset-bottom));">
+            <div class="glass rounded-2xl p-4 max-w-md mx-auto">
+                <div class="flex justify-between items-center mb-3">
+                    <span class="text-lg font-bold">🎯 What did you find?</span>
+                    <button onclick="closeIdentify()" class="text-2xl">✕</button>
                 </div>
-                <img id="captured-photo" class="w-full rounded-xl mb-4">
-                <div id="identify-loading" class="text-center py-8">
-                    <div class="text-6xl mb-3 animate-pulse">🔍</div>
-                    <div class="text-lg">Analyzing with AI...</div>
-                    <div class="text-sm text-gray-400">Cross-referencing millions of species</div>
+                <img id="snap-preview" class="w-full h-48 object-cover rounded-xl mb-4">
+                <div id="id-loading" class="text-center py-6">
+                    <div class="text-4xl animate-pulse mb-2">🔍</div>
+                    <div>Identifying...</div>
                 </div>
-                <div id="identify-results" class="hidden space-y-3"></div>
+                <div id="id-results" class="hidden space-y-2"></div>
             </div>
         </div>
     </div>
     
-    <!-- Species Detail Modal -->
-    <div id="species-modal" class="fixed inset-0 bg-black/95 z-50 hidden modal overflow-y-auto">
-        <div class="min-h-full p-4 pb-32">
-            <div class="glass rounded-3xl max-w-lg mx-auto overflow-hidden">
-                <div id="species-detail"></div>
-            </div>
+    <!-- Item Detail Modal -->
+    <div id="item-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto">
+        <div class="min-h-full p-4" style="padding-bottom: calc(120px + env(safe-area-inset-bottom));">
+            <div id="item-detail" class="glass rounded-2xl max-w-md mx-auto overflow-hidden"></div>
         </div>
     </div>
     
     <!-- Header -->
-    <div class="glass sticky top-0 z-40">
-        <div class="p-4 pb-2">
-            <div class="flex items-center justify-between mb-2">
-                <div>
-                    <div class="font-bold text-lg" id="location-name">{{ game.biome }}</div>
-                    <div class="text-xs text-gray-400">
-                        <span id="weather">{{ weather.temp_f }}°F {{ weather.conditions }}</span>
-                        <span class="mx-2">•</span>
-                        <span id="species-count">Loading...</span>
-                    </div>
-                </div>
-                <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 rounded-full font-mono font-bold text-lg tracking-wider shadow-lg">{{ game.code }}</div>
-            </div>
-            
-            <div id="leaderboard" class="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-                {% for p in players %}
-                <div class="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full {% if p.name == player_name %}bg-emerald-600/30 border border-emerald-500/50{% else %}bg-white/5{% endif %}">
-                    <span class="text-sm {% if loop.index == 1 %}text-amber-400{% elif loop.index == 2 %}text-gray-300{% elif loop.index == 3 %}text-amber-600{% else %}text-gray-500{% endif %}">{{ loop.index }}</span>
-                    <span class="font-medium">{{ p.name }}</span>
-                    <span class="font-bold text-emerald-400">{{ p.score }}</span>
-                </div>
-                {% endfor %}
-            </div>
+    <div class="glass sticky top-0 z-40 p-3">
+        <div class="flex items-center justify-between mb-2">
+            <div class="font-bold">📍 {{ game.biome }}</div>
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-1.5 rounded-full font-mono font-bold tracking-wider">{{ game.code }}</div>
         </div>
-        
-        <div class="flex overflow-x-auto gap-2 px-4 pb-3" id="category-tabs">
-            <button onclick="loadCategory('all')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium tab-active" data-cat="all">🌍 All</button>
-            <button onclick="loadCategory('plants')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="plants">🌿</button>
-            <button onclick="loadCategory('birds')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="birds">🐦</button>
-            <button onclick="loadCategory('mammals')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="mammals">🦊</button>
-            <button onclick="loadCategory('fungi')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="fungi">🍄</button>
-            <button onclick="loadCategory('insects')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="insects">🦋</button>
-            <button onclick="loadCategory('minerals')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="minerals">💎</button>
-            <button onclick="loadCategory('rocks')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="rocks">🪨</button>
-            <button onclick="loadCategory('fossils')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="fossils">🦴</button>
-            <button onclick="loadCategory('artifacts')" class="shrink-0 px-4 py-2 rounded-full border border-white/20 text-sm font-medium" data-cat="artifacts">🏺</button>
+        <div id="leaderboard" class="flex gap-2 overflow-x-auto pb-1">
+            {% for p in players %}
+            <div class="shrink-0 px-3 py-1 rounded-full text-sm {% if p.name == player_name %}bg-emerald-600/40 border border-emerald-500{% else %}bg-white/10{% endif %}">
+                <span class="{% if loop.index == 1 %}text-amber-400{% endif %}">{{ loop.index }}.</span>
+                {{ p.name }} <span class="text-emerald-400 font-bold">{{ p.score }}</span>
+            </div>
+            {% endfor %}
         </div>
     </div>
     
-    <!-- Mini Map -->
-    <div class="p-4 pt-2">
-        <div id="map" class="glass"></div>
+    <!-- Category Tabs -->
+    <div class="sticky top-[88px] z-30 bg-slate-950/80 backdrop-blur px-3 py-2">
+        <div class="flex overflow-x-auto gap-2" id="tabs">
+            <button onclick="load('all')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-emerald-600/30 border border-emerald-500" data-cat="all">🌍 All</button>
+            <button onclick="load('minerals')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-cat="minerals">💎</button>
+            <button onclick="load('rocks')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-cat="rocks">🪨</button>
+            <button onclick="load('fossils')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-cat="fossils">🦴</button>
+            <button onclick="load('plants')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-cat="plants">🌿</button>
+            <button onclick="load('birds')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-cat="birds">🐦</button>
+            <button onclick="load('tracks')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-cat="tracks">🐾</button>
+            <button onclick="load('artifacts')" class="shrink-0 px-3 py-1.5 rounded-full text-sm bg-white/10" data-cat="artifacts">🏺</button>
+        </div>
     </div>
     
-    <!-- Species Grid -->
-    <div class="px-4 pb-48">
-        <div class="flex justify-between items-center mb-3">
-            <h2 class="text-lg font-bold">🎯 Find & Photograph</h2>
-            <div class="text-sm text-gray-400" id="grid-count"></div>
-        </div>
-        <div id="species-grid" class="grid grid-cols-2 gap-3">
+    <!-- Grid -->
+    <div class="p-3" style="padding-bottom: calc(140px + env(safe-area-inset-bottom));">
+        <div id="grid" class="grid grid-cols-2 gap-2">
             <div class="glass rounded-xl p-8 col-span-2 text-center">
-                <div class="text-5xl mb-2 animate-pulse">🔍</div>
-                <div>Loading species data...</div>
+                <div class="text-4xl mb-2 animate-pulse">🔍</div>
+                <div>Loading...</div>
             </div>
         </div>
     </div>
     
-    <!-- Camera FAB - MOVED MUCH HIGHER -->
-    <div class="fixed z-30" style="bottom: calc(100px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%);">
-        <button onclick="openCamera()" class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/50 transition-all transform hover:scale-110 active:scale-95">
+    <!-- Camera FAB -->
+    <div class="fixed z-40" style="bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);">
+        <button onclick="openCamera()" class="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/40 active:scale-95 transition-transform">
             <span class="text-4xl">📸</span>
         </button>
     </div>
     
     <!-- Bottom Nav -->
-    <div class="fixed bottom-0 left-0 right-0 glass z-20" style="padding-bottom: env(safe-area-inset-bottom, 10px);">
-        <div class="flex p-3 gap-2">
-            <a href="/" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-2xl">🏠</a>
-            <a href="/collection" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-2xl">🏆</a>
-            <a href="/map?lat={{ lat }}&lng={{ lng }}" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-2xl">🗺️</a>
-            <button onclick="shareGame()" class="flex-1 py-3 bg-white/5 rounded-xl text-center text-2xl">📤</button>
+    <div class="fixed bottom-0 left-0 right-0 glass z-30" style="padding-bottom: env(safe-area-inset-bottom);">
+        <div class="flex p-2 gap-2">
+            <a href="/" class="flex-1 py-2.5 bg-white/5 rounded-xl text-center text-xl">🏠</a>
+            <a href="/reference" class="flex-1 py-2.5 bg-white/5 rounded-xl text-center text-xl">📚</a>
+            <a href="/collection" class="flex-1 py-2.5 bg-white/5 rounded-xl text-center text-xl">🏆</a>
+            <button onclick="share()" class="flex-1 py-2.5 bg-white/5 rounded-xl text-center text-xl">📤</button>
         </div>
     </div>
     
     <script>
         const gameCode = "{{ game.code }}";
         const playerName = "{{ player_name }}";
-        const foundItems = {{ found_items | tojson }};
-        let currentLat = {{ lat }};
-        let currentLng = {{ lng }};
-        let mediaStream = null;
-        let capturedImage = null;
-        let map = null;
+        const found = new Set({{ found_items | tojson }});
+        let lat = {{ lat }}, lng = {{ lng }};
+        let stream = null;
+        let snap = null;
         
-        document.addEventListener('DOMContentLoaded', () => {
-            map = L.map('map').setView([currentLat, currentLng], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            L.marker([currentLat, currentLng]).addTo(map).bindPopup('📍 You');
-            loadCategory('all');
-        });
-        
+        // GPS tracking
         if (navigator.geolocation) {
-            navigator.geolocation.watchPosition(pos => {
-                currentLat = pos.coords.latitude;
-                currentLng = pos.coords.longitude;
-            }, null, { enableHighAccuracy: true });
+            navigator.geolocation.watchPosition(p => { lat = p.coords.latitude; lng = p.coords.longitude; }, null, {enableHighAccuracy: true});
         }
         
-        async function loadCategory(category) {
-            document.querySelectorAll('[data-cat]').forEach(t => {
-                t.classList.remove('tab-active');
-                if (t.dataset.cat === category) t.classList.add('tab-active');
+        // Load items
+        async function load(cat) {
+            document.querySelectorAll('[data-cat]').forEach(b => {
+                b.className = `shrink-0 px-3 py-1.5 rounded-full text-sm ${b.dataset.cat === cat ? 'bg-emerald-600/30 border border-emerald-500' : 'bg-white/10'}`;
             });
             
-            const grid = document.getElementById('species-grid');
-            grid.innerHTML = '<div class="glass rounded-xl p-8 col-span-2 text-center"><div class="text-5xl mb-2 animate-pulse">🔍</div><div>Loading...</div></div>';
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '<div class="glass rounded-xl p-6 col-span-2 text-center"><div class="text-3xl animate-pulse">🔍</div></div>';
             
             try {
-                const res = await fetch(`/api/species?lat=${currentLat}&lng=${currentLng}&category=${category}`);
-                const data = await res.json();
+                const r = await fetch(`/api/species?lat=${lat}&lng=${lng}&category=${cat}`);
+                const data = await r.json();
                 
-                let allItems = [];
-                for (const [cat, items] of Object.entries(data.categories || {})) {
-                    items.forEach(item => { item._category = cat; allItems.push(item); });
+                let items = [];
+                for (const [c, list] of Object.entries(data.categories || {})) {
+                    list.forEach(i => { i._cat = c; items.push(i); });
                 }
                 
-                document.getElementById('species-count').textContent = `${allItems.length} species`;
-                document.getElementById('grid-count').textContent = `${allItems.length} items`;
-                
-                if (!allItems.length) {
-                    grid.innerHTML = '<div class="glass rounded-xl p-8 col-span-2 text-center"><div class="text-5xl mb-2">🌍</div><div>No data found. Try a different category!</div></div>';
+                if (!items.length) {
+                    grid.innerHTML = '<div class="glass rounded-xl p-8 col-span-2 text-center">No items found</div>';
                     return;
                 }
                 
-                const rarityOrder = {legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4};
-                allItems.sort((a, b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+                // Sort by rarity
+                const order = {legendary: 0, epic: 1, rare: 2, uncommon: 3, common: 4};
+                items.sort((a,b) => (order[a.rarity]||5) - (order[b.rarity]||5));
                 
-                grid.innerHTML = allItems.map(item => {
-                    const isFound = foundItems.includes(item.name);
-                    const points = item.points || 10;
-                    const isDangerous = item.danger;
-                    
+                grid.innerHTML = items.map(i => {
+                    const isFound = found.has(i.name);
+                    const emoji = {minerals:'💎',rocks:'🪨',fossils:'🦴',plants:'🌿',birds:'🐦',mammals:'🦊',insects:'🦋',fungi:'🍄',tracks:'🐾',artifacts:'🏺'}[i._cat] || '🔍';
                     return `
-                        <div class="glass rounded-xl overflow-hidden species-card rarity-${item.rarity || 'common'} ${isFound ? 'found' : ''} ${isDangerous ? 'danger-' + item.danger.level : ''}" 
-                             onclick='showSpecies(${JSON.stringify(item).replace(/'/g, "\\'")})' data-name="${item.name}">
-                            ${item.photo ? `<img src="${item.photo}" class="w-full h-28 object-cover" onerror="this.style.display='none'">` : `<div class="w-full h-28 bg-white/5 flex items-center justify-center text-4xl">${getEmoji(item._category)}</div>`}
-                            <div class="p-3">
-                                <div class="font-semibold text-sm truncate">${item.name}</div>
+                        <div class="glass rounded-xl overflow-hidden rarity-${i.rarity||'common'} ${isFound?'found':''}" onclick='showItem(${JSON.stringify(i).replace(/'/g,"&#39;")})'>
+                            ${i.photo ? `<img src="${i.photo}" class="w-full h-24 object-cover" loading="lazy" onerror="this.style.display='none'">` : `<div class="w-full h-24 bg-white/5 flex items-center justify-center text-3xl">${emoji}</div>`}
+                            <div class="p-2">
+                                <div class="font-medium text-sm truncate">${i.name}</div>
                                 <div class="flex justify-between items-center mt-1">
-                                    <span class="text-xs text-gray-400 capitalize">${item.rarity || 'common'}</span>
-                                    <span class="text-xs font-bold text-emerald-400">+${points}</span>
+                                    <span class="text-xs text-gray-400 capitalize">${i.rarity||'common'}</span>
+                                    <span class="text-xs font-bold text-emerald-400">+${i.points}</span>
                                 </div>
-                                ${isDangerous ? `<div class="text-xs text-red-400 mt-1">⚠️ ${item.danger.level}</div>` : ''}
-                                ${isFound ? '<div class="text-emerald-400 text-xs mt-1">✓ Found!</div>' : ''}
+                                ${isFound ? '<div class="text-emerald-400 text-xs">✓ Found</div>' : ''}
                             </div>
                         </div>
                     `;
                 }).join('');
-            } catch (e) {
-                console.error(e);
-                grid.innerHTML = '<div class="glass rounded-xl p-8 col-span-2 text-center text-red-400">Error loading</div>';
+            } catch(e) {
+                grid.innerHTML = '<div class="glass rounded-xl p-6 col-span-2 text-center text-red-400">Error loading</div>';
             }
         }
         
-        function getEmoji(cat) {
-            return {plants:'🌿',fungi:'🍄',birds:'🐦',mammals:'🦊',reptiles:'🦎',amphibians:'🐸',insects:'🦋',fish:'🐟',minerals:'💎',fossils:'🦴',artifacts:'🏺',rocks:'🪨'}[cat] || '🔍';
-        }
-        
-        function showSpecies(item) {
-            const modal = document.getElementById('species-modal');
-            const detail = document.getElementById('species-detail');
-            const points = item.points || 10;
+        function showItem(item) {
+            const modal = document.getElementById('item-modal');
+            const detail = document.getElementById('item-detail');
+            const emoji = {minerals:'💎',rocks:'🪨',fossils:'🦴',plants:'🌿',birds:'🐦',mammals:'🦊',insects:'🦋',fungi:'🍄',tracks:'🐾',artifacts:'🏺'}[item._cat] || '🔍';
             
             detail.innerHTML = `
-                ${item.photo ? `<img src="${item.photo_large || item.photo}" class="w-full h-56 object-cover">` : `<div class="w-full h-56 bg-white/5 flex items-center justify-center text-7xl">${getEmoji(item._category)}</div>`}
-                <div class="p-6">
-                    <div class="flex justify-between items-start mb-3">
+                ${item.photo ? `<img src="${item.photo}" class="w-full h-52 object-cover">` : `<div class="w-full h-52 bg-white/5 flex items-center justify-center text-6xl">${emoji}</div>`}
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
                         <div>
-                            <h2 class="text-2xl font-bold">${item.name}</h2>
-                            <div class="text-gray-400 italic text-sm">${item.scientific || ''}</div>
+                            <h2 class="text-xl font-bold">${item.name}</h2>
+                            <div class="text-gray-400 text-sm">${item.scientific || item.type || ''}</div>
                         </div>
-                        <div class="bg-emerald-600 px-3 py-1 rounded-full font-bold">+${points}</div>
+                        <div class="bg-emerald-600 px-3 py-1 rounded-full font-bold">+${item.points}</div>
                     </div>
-                    
-                    ${item.danger ? `
-                        <div class="bg-red-500/20 border border-red-500 rounded-xl p-4 mb-4">
-                            <div class="font-bold text-red-400 flex items-center gap-2">⚠️ ${item.danger.level.toUpperCase()}</div>
-                            <div class="text-sm mt-1">${item.danger.warning}</div>
-                        </div>
-                    ` : ''}
-                    
-                    ${item.lookalikes && item.lookalikes.length ? `
-                        <div class="bg-amber-500/20 border border-amber-500 rounded-xl p-4 mb-4">
-                            <div class="font-bold text-amber-400">⚠️ Dangerous Lookalikes</div>
-                            <div class="text-sm mt-1">${item.lookalikes.join(', ')}</div>
-                        </div>
-                    ` : ''}
-                    
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="px-3 py-1 rounded-full bg-white/10 text-sm capitalize">${item.rarity || 'common'}</span>
-                        <span class="px-3 py-1 rounded-full bg-white/10 text-sm">${item._category || item.iconic || 'Unknown'}</span>
-                        ${item.observations ? `<span class="px-3 py-1 rounded-full bg-white/10 text-sm">${item.observations.toLocaleString()} obs</span>` : ''}
+                    <p class="text-gray-300 text-sm mb-4">${item.description || ''}</p>
+                    <div class="flex gap-2 mb-4">
+                        <span class="px-2 py-1 rounded bg-white/10 text-xs capitalize">${item.rarity||'common'}</span>
+                        ${item.hardness ? `<span class="px-2 py-1 rounded bg-white/10 text-xs">Hardness: ${item.hardness}</span>` : ''}
+                        ${item.period ? `<span class="px-2 py-1 rounded bg-white/10 text-xs">${item.period}</span>` : ''}
                     </div>
-                    
-                    ${item.description ? `<p class="text-gray-300 text-sm mb-4">${item.description}</p>` : ''}
-                    
-                    <div class="flex gap-3">
-                        <button onclick="closeSpecies(); openCamera();" class="flex-1 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl font-bold text-lg">📸 Photograph</button>
-                        ${item.wikipedia ? `<a href="${item.wikipedia}" target="_blank" class="py-4 px-5 bg-white/10 rounded-xl text-xl">📚</a>` : ''}
+                    <div class="flex gap-2">
+                        <button onclick="quickLog('${item.name.replace(/'/g,"\\'")}', '${item._cat}', ${item.points})" class="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl font-bold">
+                            ✓ LOG FIND
+                        </button>
+                        <button onclick="closeItem(); openCamera();" class="py-3 px-4 bg-white/10 rounded-xl">📸</button>
                     </div>
-                    <button onclick="closeSpecies()" class="w-full mt-3 py-3 bg-white/5 rounded-xl">Close</button>
+                    <button onclick="closeItem()" class="w-full mt-2 py-2 bg-white/5 rounded-xl text-sm">Close</button>
                 </div>
             `;
             modal.classList.remove('hidden');
         }
         
-        function closeSpecies() { document.getElementById('species-modal').classList.add('hidden'); }
+        function closeItem() { document.getElementById('item-modal').classList.add('hidden'); }
         
-        function showToast(msg, success = true) {
-            const toast = document.getElementById('toast');
-            toast.querySelector('div').textContent = msg;
-            toast.querySelector('div').className = `glass rounded-xl p-4 text-center font-bold ${success ? 'bg-emerald-600/30 border border-emerald-500/50' : 'bg-red-600/30 border border-red-500/50'}`;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 3000);
+        async function quickLog(name, cat, pts) {
+            closeItem();
+            toast('🔍 Logging...', true);
+            
+            try {
+                const r = await fetch('/api/quick_log', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, category: cat, points: pts, lat, lng})
+                });
+                const data = await r.json();
+                
+                if (data.success) {
+                    toast(`🎉 +${data.points} pts!`, true);
+                    found.add(name);
+                    document.querySelectorAll(`[onclick*="${name.replace(/'/g,"\\'")}"]`).forEach(el => el.classList.add('found'));
+                    refreshLB();
+                } else {
+                    toast(data.error || 'Error', false);
+                }
+            } catch(e) {
+                toast('Network error', false);
+            }
+        }
+        
+        function toast(msg, ok) {
+            const t = document.getElementById('toast');
+            t.querySelector('div').textContent = msg;
+            t.querySelector('div').className = `glass rounded-xl p-4 text-center font-bold text-lg ${ok ? 'bg-emerald-600/30 border border-emerald-500' : 'bg-red-600/30 border border-red-500'}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 2500);
         }
         
         async function openCamera() {
-            const modal = document.getElementById('camera-modal');
-            const video = document.getElementById('camera-feed');
             try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-                    audio: false
-                });
-                video.srcObject = mediaStream;
-                modal.classList.remove('hidden');
-            } catch (e) {
-                showToast('Camera access required!', false);
+                stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment', width: {ideal: 1280}, height: {ideal: 720}}, audio: false});
+                document.getElementById('camera').srcObject = stream;
+                document.getElementById('camera-modal').classList.remove('hidden');
+            } catch(e) {
+                toast('Camera access needed!', false);
             }
         }
         
         function closeCamera() {
-            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+            if (stream) stream.getTracks().forEach(t => t.stop());
             document.getElementById('camera-modal').classList.add('hidden');
         }
         
-        function capturePhoto() {
-            const video = document.getElementById('camera-feed');
-            const canvas = document.getElementById('photo-canvas');
+        function snapPhoto() {
+            const video = document.getElementById('camera');
+            const canvas = document.getElementById('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
-            capturedImage = canvas.toDataURL('image/jpeg', 0.85);
+            snap = canvas.toDataURL('image/jpeg', 0.7);
             closeCamera();
-            identifyPhoto();
+            identify();
         }
         
-        async function identifyPhoto() {
+        async function identify() {
             const modal = document.getElementById('identify-modal');
-            const photo = document.getElementById('captured-photo');
-            const loading = document.getElementById('identify-loading');
-            const results = document.getElementById('identify-results');
-            
-            photo.src = capturedImage;
-            loading.classList.remove('hidden');
-            results.classList.add('hidden');
+            document.getElementById('snap-preview').src = snap;
+            document.getElementById('id-loading').classList.remove('hidden');
+            document.getElementById('id-results').classList.add('hidden');
             modal.classList.remove('hidden');
             
             try {
-                const res = await fetch('/api/identify', {
+                const r = await fetch('/api/identify', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: capturedImage, lat: currentLat, lng: currentLng })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({image: snap, lat, lng})
                 });
-                const data = await res.json();
-                loading.classList.add('hidden');
+                const data = await r.json();
+                
+                document.getElementById('id-loading').classList.add('hidden');
+                const results = document.getElementById('id-results');
                 
                 if (data.results && data.results.length) {
-                    results.innerHTML = `
-                        <div class="bg-amber-500/20 border border-amber-500 rounded-xl p-3 mb-4 text-sm">
-                            ⚠️ AI IDs are suggestions only. Never eat wild plants/fungi based solely on AI identification.
-                        </div>
-                        ${data.results.map(r => `
-                            <div class="glass rounded-xl p-4 cursor-pointer hover:bg-emerald-600/20 transition-all ${r.danger ? 'danger-' + r.danger.level : ''}"
-                                 onclick="confirmFind('${r.name.replace(/'/g, "\\'")}', '${r.scientific || ''}', '${r.iconic || 'Unknown'}', '${r.confidence}')">
-                                <div class="flex gap-3 items-center">
-                                    ${r.photo ? `<img src="${r.photo}" class="w-16 h-16 rounded-lg object-cover">` : '<div class="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center text-2xl">🔍</div>'}
-                                    <div class="flex-1">
-                                        <div class="font-bold">${r.name}</div>
-                                        <div class="text-sm text-gray-400 italic">${r.scientific || ''}</div>
-                                        <div class="text-xs mt-1">
-                                            <span class="confidence-${r.confidence}">${Math.round(r.score * 100)}% • ${r.confidence} confidence</span>
-                                        </div>
-                                        ${r.danger ? `<div class="text-xs text-red-400 mt-1">⚠️ ${r.danger.warning}</div>` : ''}
-                                    </div>
-                                    ${r.confidence !== 'low' ? '<div class="text-xl">→</div>' : '<div class="text-xs text-red-400">Too low</div>'}
+                    results.innerHTML = data.results.map(r => `
+                        <div class="glass rounded-xl p-3 active:bg-emerald-600/20" onclick="confirmFind('${r.name.replace(/'/g,"\\'")}', '${r.category||'Unknown'}', ${r.points||50})">
+                            <div class="flex gap-3 items-center">
+                                ${r.photo ? `<img src="${r.photo}" class="w-14 h-14 rounded-lg object-cover">` : '<div class="w-14 h-14 bg-white/10 rounded-lg flex items-center justify-center">🔍</div>'}
+                                <div class="flex-1">
+                                    <div class="font-bold">${r.name}</div>
+                                    <div class="text-xs text-gray-400">${Math.round(r.score * 100)}% match</div>
                                 </div>
+                                <div class="text-emerald-400 font-bold">+${r.points||50}</div>
                             </div>
-                        `).join('')}
-                    `;
+                        </div>
+                    `).join('');
                     results.classList.remove('hidden');
                 } else {
-                    results.innerHTML = '<div class="text-center py-4"><div class="text-5xl mb-2">🤔</div><div>Could not identify. Try a clearer photo!</div><button onclick="closeIdentify(); openCamera();" class="mt-4 px-6 py-3 bg-emerald-600 rounded-xl">Try Again</button></div>';
+                    results.innerHTML = `
+                        <div class="text-center py-4">
+                            <div class="text-3xl mb-2">🤔</div>
+                            <div class="mb-3">Couldn't identify. Check the Reference Guide!</div>
+                            <a href="/reference" class="inline-block px-4 py-2 bg-emerald-600 rounded-lg">📚 Reference</a>
+                        </div>
+                    `;
                     results.classList.remove('hidden');
                 }
-            } catch (e) {
-                loading.classList.add('hidden');
-                results.innerHTML = '<div class="text-center text-red-400">Error. Try again.</div>';
-                results.classList.remove('hidden');
+            } catch(e) {
+                document.getElementById('id-loading').classList.add('hidden');
+                document.getElementById('id-results').innerHTML = '<div class="text-center text-red-400">Error - try again</div>';
+                document.getElementById('id-results').classList.remove('hidden');
             }
         }
         
-        async function confirmFind(name, scientific, iconic, confidence) {
-            if (confidence === 'low') {
-                showToast('Confidence too low - try clearer photo', false);
-                return;
-            }
+        async function confirmFind(name, cat, pts) {
             closeIdentify();
-            showToast('🔍 Confirming...', true);
+            toast('🔍 Confirming...', true);
             
             try {
-                const res = await fetch('/api/confirm_find', {
+                const r = await fetch('/api/confirm_find', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, scientific, category: iconic, rarity: 'uncommon', lat: currentLat, lng: currentLng, confidence })
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name, category: cat, points: pts, lat, lng})
                 });
-                const data = await res.json();
+                const data = await r.json();
                 
                 if (data.success) {
-                    showToast(`🎉 ${name}! +${data.points} pts!`, true);
-                    foundItems.push(name);
-                    document.querySelectorAll(`[data-name="${name}"]`).forEach(el => el.classList.add('found'));
-                    refreshLeaderboard();
+                    toast(`🎉 ${name}! +${data.points} pts!`, true);
+                    found.add(name);
+                    refreshLB();
                 } else {
-                    showToast(data.error || 'Error', false);
+                    toast(data.error || 'Error', false);
                 }
-            } catch (e) {
-                showToast('Network error', false);
+            } catch(e) {
+                toast('Network error', false);
             }
         }
         
         function closeIdentify() { document.getElementById('identify-modal').classList.add('hidden'); }
         
-        async function refreshLeaderboard() {
-            const res = await fetch(`/api/leaderboard/${gameCode}`);
-            const players = await res.json();
-            document.getElementById('leaderboard').innerHTML = players.map((p, i) => `
-                <div class="flex items-center gap-2 shrink-0 px-3 py-1.5 rounded-full ${p.name === playerName ? 'bg-emerald-600/30 border border-emerald-500/50' : 'bg-white/5'}">
-                    <span class="text-sm ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-500'}">${i + 1}</span>
-                    <span class="font-medium">${p.name}</span>
-                    <span class="font-bold text-emerald-400">${p.score}</span>
+        async function refreshLB() {
+            const r = await fetch(`/api/leaderboard/${gameCode}`);
+            const players = await r.json();
+            document.getElementById('leaderboard').innerHTML = players.map((p,i) => `
+                <div class="shrink-0 px-3 py-1 rounded-full text-sm ${p.name === playerName ? 'bg-emerald-600/40 border border-emerald-500' : 'bg-white/10'}">
+                    <span class="${i === 0 ? 'text-amber-400' : ''}">${i+1}.</span>
+                    ${p.name} <span class="text-emerald-400 font-bold">${p.score}</span>
                 </div>
             `).join('');
         }
         
-        function shareGame() {
+        function share() {
             const text = `Join my NatureHunt! Code: ${gameCode}`;
-            if (navigator.share) navigator.share({ title: 'NatureHunt', text, url: location.origin + '/join' });
-            else { navigator.clipboard.writeText(text); showToast('Code copied!', true); }
+            if (navigator.share) navigator.share({title: 'NatureHunt', text, url: location.origin + '/join'});
+            else { navigator.clipboard.writeText(text); toast('Code copied!', true); }
         }
         
-        setInterval(refreshLeaderboard, 5000);
+        load('all');
+        setInterval(refreshLB, 5000);
     </script>
 </body>
 </html>
